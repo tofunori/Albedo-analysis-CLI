@@ -148,7 +148,9 @@ class PivotBasedProcessor:
         # Merge with AWS data (simple inner join as in user's notebook)
         merged = pd.merge(modis_pivot, aws_data[['date', 'Albedo']], on='date', how='inner')
         merged.rename(columns={'Albedo': 'AWS'}, inplace=True)
+        # Keep date as both index and column for plotting compatibility
         merged.set_index('date', inplace=True)
+        merged['date'] = merged.index
         
         # Add the additional columns to the merged dataframe
         for col in additional_columns:

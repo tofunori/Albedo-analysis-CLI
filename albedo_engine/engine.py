@@ -308,36 +308,21 @@ class AlbedoAnalysisEngine:
         except Exception as e:
             self.logger.error(f"Error creating original outlier analysis: {e}")
         
-        # 2. Original Comprehensive Summary Figure (4-panel + table + boxplots)
+        # 2. Four Metrics Boxplot Summary (2x2 layout: correlation, bias, MAE, RMSE)
         summary_path = os.path.join(plots_dir, f"{glacier_id}_02_comprehensive_summary_figure.png")
         try:
-            self.logger.info("Creating original comprehensive summary figure")
-            fig = plot_generator.create_original_comprehensive_summary(
+            self.logger.info("Creating 2x2 metrics boxplot summary")
+            fig = plot_generator.create_four_metrics_boxplot_summary(
                 aws_data, modis_data, glacier_name, summary_path
             )
             if fig:
                 plt.close(fig)
-                self.logger.info(f"Generated original comprehensive summary: {summary_path}")
+                self.logger.info(f"Generated 2x2 metrics boxplot summary: {summary_path}")
         except Exception as e:
-            self.logger.error(f"Error creating original comprehensive summary: {e}")
+            self.logger.error(f"Error creating 2x2 metrics boxplot summary: {e}")
         
-        # 3. Method Comparison Boxplots (traditional boxplot)
-        boxplot_path = os.path.join(plots_dir, f"{glacier_id}_03_method_comparison_boxplots.png")
-        try:
-            self.logger.info("Creating method comparison boxplots")
-            all_data = {'AWS': aws_data}
-            all_data.update(modis_data)
-            fig = plot_generator.create_boxplot(
-                all_data, f"{glacier_name} - Method Distribution Comparison", "Albedo", boxplot_path
-            )
-            if fig:
-                plt.close(fig)
-                self.logger.info(f"Generated method comparison boxplots: {boxplot_path}")
-        except Exception as e:
-            self.logger.error(f"Error creating method comparison boxplots: {e}")
-        
-        # 4. Original Seasonal Analysis (4-panel monthly boxplots)
-        seasonal_path = os.path.join(plots_dir, f"{glacier_id}_04_seasonal_comparison.png")
+        # 3. Original Seasonal Analysis (4-panel monthly boxplots)
+        seasonal_path = os.path.join(plots_dir, f"{glacier_id}_03_seasonal_comparison.png")
         try:
             if melted_data is not None and len(melted_data) > 0:
                 self.logger.info("Creating original seasonal analysis (4-panel)")
@@ -352,8 +337,8 @@ class AlbedoAnalysisEngine:
         except Exception as e:
             self.logger.error(f"Error creating original seasonal analysis: {e}")
         
-        # 5. Time Series Analysis
-        timeseries_path = os.path.join(plots_dir, f"{glacier_id}_05_time_series_analysis.png")
+        # 4. Time Series Analysis
+        timeseries_path = os.path.join(plots_dir, f"{glacier_id}_04_time_series_analysis.png")
         try:
             if melted_data is not None and len(melted_data) > 0:
                 self.logger.info("Creating time series analysis")
@@ -369,8 +354,8 @@ class AlbedoAnalysisEngine:
         except Exception as e:
             self.logger.error(f"Error creating time series analysis: {e}")
         
-        # 6. Original Correlation & Bias Analysis (4-panel comprehensive)
-        bias_analysis_path = os.path.join(plots_dir, f"{glacier_id}_06_correlation_bias_analysis.png")
+        # 5. Original Correlation & Bias Analysis (4-panel comprehensive)
+        bias_analysis_path = os.path.join(plots_dir, f"{glacier_id}_05_correlation_bias_analysis.png")
         try:
             self.logger.info("Creating original correlation and bias analysis (4-panel)")
             fig = plot_generator.create_original_correlation_bias_analysis(
@@ -382,7 +367,7 @@ class AlbedoAnalysisEngine:
         except Exception as e:
             self.logger.error(f"Error creating original correlation & bias analysis: {e}")
         
-        self.logger.info(f"Completed generating 6 original plots for {glacier_id} (skipped correlation matrix)")
+        self.logger.info(f"Completed generating 5 plots for {glacier_id} (replaced 2 plots with single 2x2 metrics boxplot)")
     
     # ===== BASIC ANALYSIS METHODS =====
     
