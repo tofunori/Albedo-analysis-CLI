@@ -14,18 +14,26 @@ A comprehensive Python framework for analyzing glacier albedo using MODIS satell
 ## Quick Start
 
 ```bash
-# Interactive mode
+# Interactive mode (default)
 python interactive_main.py
 
-# Direct analysis
-python pivot_based_main.py
+# Command-line mode for automation
+python interactive_main.py --glacier haig --analysis-mode comprehensive --selected-pixels
+python interactive_main.py --all-glaciers --analysis-mode basic
+python interactive_main.py --comparative-analysis
+
+# See all options
+python interactive_main.py --help
 ```
 
 ## Key Components
 
-- `pivot_based_main.py` - Enhanced analysis pipeline with 7 plot types
-- `interactive_main.py` - User-friendly menu interface
-- `src/` - Core analysis modules and data loaders
+- `interactive_main.py` - **Single entry point** with both interactive and command-line interfaces
+- `albedo_engine/` - Core unified analysis engine
+- `data_processing/` - Data loading and processing modules  
+- `analysis/` - Analysis components (core, comparative, spatial)
+- `visualization/` - Comprehensive visualization suite
+- `utils/` - Configuration, validation, and system utilities
 - `config/` - Glacier configurations and settings
 
 ## Requirements

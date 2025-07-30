@@ -15,7 +15,12 @@
       "Bash(rm:*)",
       "Bash(copy \"D:\\Documents\\Projects\\athabasca_analysis\\data\\csv\\iceAWS_Atha_albedo_daily_20152020_filled_clean.csv\" \"data\\aws\"\")",
       "Bash(copy \"D:\\Documents\\Projects\\athabasca_analysis\\data\\csv\\iceAWS_Atha_albedo_daily_20152020_filled_clean.csv\" \"data\\aws\\\")",
-      "Bash(git init:*)"
+      "Bash(git init:*)",
+      "Bash(git commit:*)",
+      "Bash(git config:*)",
+      "Bash(del:*)",
+      "Bash(git checkout:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
