@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dir:*)",
+      "Bash(mkdir:*)",
+      "Bash(cut:*)",
+      "Bash(python:*)",
+      "Bash(conda install:*)",
+      "Bash(timeout:*)",
+      "Bash(ls:*)",
+      "Bash(cp:*)",
+      "Bash(find:*)",
+      "Bash(copy \"D:\\Documents\\Projects\\athabasca_analysis\\data\\mask\\*\" \"D:\\Documents\\Projects\\Albedo_analysis_New\\data\\glacier_masks\\athabasca\"\")",
+      "Bash(copy \"D:\\Documents\\Projects\\athabasca_analysis\\data\\mask\\*\" \"D:\\Documents\\Projects\\Albedo_analysis_New\\data\\glacier_masks\\athabasca\")",
+      "Bash(rm:*)",
+      "Bash(copy \"D:\\Documents\\Projects\\athabasca_analysis\\data\\csv\\iceAWS_Atha_albedo_daily_20152020_filled_clean.csv\" \"data\\aws\"\")",
+      "Bash(copy \"D:\\Documents\\Projects\\athabasca_analysis\\data\\csv\\iceAWS_Atha_albedo_daily_20152020_filled_clean.csv\" \"data\\aws\\\")",
+      "Bash(git init:*)"
+    ],
+    "deny": []
+  }
+}

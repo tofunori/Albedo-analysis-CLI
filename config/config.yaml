@@ -1,0 +1,69 @@
+# Main configuration file for MODIS Albedo Analysis Framework
+
+# Analysis parameters
+analysis:
+  albedo:
+    modis_products:
+      - MOD09GA
+      - MOD10A1  
+      - MCD43A3
+    quality_filters:
+      cloud_threshold: 0.2
+      snow_threshold: 0.1
+      outlier_threshold: 2.5  # Z-score threshold for outlier removal
+      
+  statistics:
+    metrics:
+      - rmse
+      - bias
+      - correlation
+      - mae
+    confidence_level: 0.95
+    
+  spatial:
+    pixel_size: 500  # meters
+    buffer_distance: 1000  # meters around AWS stations
+    
+# Data paths (can be absolute or relative to project root)
+data:
+  base_path: "data"
+  modis_path: "data/modis"  # Primary MODIS path
+  athabasca_modis_path: "data/modis/athabasca"  # Athabasca-specific path
+  haig_modis_path: "data/modis/haig"  # Haig-specific path
+  coropuna_modis_path: "data/modis/coropuna"  # Coropuna-specific path
+  aws_path: "data/aws"  # Primary AWS path
+  athabasca_aws_path: "data/aws"  # Athabasca AWS path
+  haig_aws_path: "data/aws"  # Haig AWS path
+  coropuna_aws_path: "data/aws"  # Coropuna AWS path
+  glacier_masks_path: "data/glacier_masks"
+  
+# Output paths
+output:
+  base_path: "outputs"
+  results_path: "outputs/results"
+  plots_path: "outputs/plots"
+  maps_path: "outputs/maps"
+  
+# Visualization settings
+visualization:
+  style: "seaborn-v0_8"
+  dpi: 300
+  figure_size: [10, 8]
+  colors:
+    MOD09GA: "#1f77b4"
+    MOD10A1: "#ff7f0e"
+    MCD43A3: "#2ca02c"
+    AWS: "#d62728"
+  
+# Processing options
+processing:
+  parallel: true
+  n_cores: -1  # Use all available cores
+  chunk_size: 1000
+  memory_limit: "8GB"
+  
+# Logging
+logging:
+  level: "INFO"
+  file: "albedo_analysis.log"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
