@@ -20,7 +20,8 @@
       "Bash(git config:*)",
       "Bash(del:*)",
       "Bash(git checkout:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(git add:*)"
     ],
     "deny": []
   }

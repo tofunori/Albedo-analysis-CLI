@@ -148,31 +148,64 @@ class MultiGlacierComparativeAnalysis:
             logger.warning(f"Outputs directory {self.outputs_dir} does not exist")
             return glacier_results
         
-        # Look for directories matching glacier_pivot_* pattern
+        # Look for directories matching glacier analysis patterns (pivot or comprehensive)
         for glacier_id in self.glacier_metadata.keys():
-            pattern = f"{glacier_id}_pivot_*"
-            matching_dirs = list(self.outputs_dir.glob(pattern))
+            # Try multiple patterns in order of preference
+            patterns = [f"{glacier_id}_pivot_*", f"{glacier_id}_comprehensive_*", f"{glacier_id}_enhanced_*", f"{glacier_id}_best_pixel_*"]
             
-            if matching_dirs:
-                # Get the most recent directory (by name/timestamp)
-                latest_dir = max(matching_dirs, key=lambda x: x.name)
-                
-                # Check for required result files
+            latest_dir = None
+            analysis_type = None
+            
+            for pattern in patterns:
+                matching_dirs = list(self.outputs_dir.glob(pattern))
+                if matching_dirs:
+                    # Get the most recent directory (by name/timestamp)
+                    latest_dir = max(matching_dirs, key=lambda x: x.name)
+                    analysis_type = pattern.split('_')[1].replace('*', '')  # Extract analysis type
+                    break
+            
+            if latest_dir:
+                # Check for required result files with flexible naming
                 results_dir = latest_dir / "results"
                 if results_dir.exists():
-                    method_comparison_file = results_dir / f"{glacier_id}_pivot_method_comparison.csv"
-                    outlier_analysis_file = results_dir / f"{glacier_id}_pivot_outlier_analysis.csv"
-                    merged_data_file = results_dir / f"{glacier_id}_pivot_merged_data.csv"
+                    # Try different file naming patterns
+                    method_comparison_file = None
+                    outlier_analysis_file = None
+                    merged_data_file = None
                     
-                    if method_comparison_file.exists():
+                    # Check for files with analysis type suffix
+                    for suffix in [f"_{analysis_type}", ""]:
+                        if not method_comparison_file:
+                            candidate = results_dir / f"{glacier_id}{suffix}_method_comparison.csv"
+                            if candidate.exists():
+                                method_comparison_file = candidate
+                        
+                        if not outlier_analysis_file:
+                            candidate = results_dir / f"{glacier_id}{suffix}_outlier_analysis.csv"
+                            if candidate.exists():
+                                outlier_analysis_file = candidate
+                        
+                        if not merged_data_file:
+                            candidate = results_dir / f"{glacier_id}{suffix}_merged_data.csv"
+                            if candidate.exists():
+                                merged_data_file = candidate
+                    
+                    if method_comparison_file and method_comparison_file.exists():
                         glacier_results[glacier_id] = {
                             'directory': str(latest_dir),
                             'method_comparison': str(method_comparison_file),
-                            'outlier_analysis': str(outlier_analysis_file) if outlier_analysis_file.exists() else None,
-                            'merged_data': str(merged_data_file) if merged_data_file.exists() else None,
-                            'timestamp': self._extract_timestamp(latest_dir.name)
+                            'outlier_analysis': str(outlier_analysis_file) if outlier_analysis_file and outlier_analysis_file.exists() else None,
+                            'merged_data': str(merged_data_file) if merged_data_file and merged_data_file.exists() else None,
+                            'timestamp': self._extract_timestamp(latest_dir.name),
+                            'analysis_type': analysis_type
                         }
-                        logger.info(f"Found results for {glacier_id}: {latest_dir.name}")
+                        logger.info(f"Found {analysis_type} results for {glacier_id}: {latest_dir.name}")
+                    else:
+                        logger.warning(f"No method comparison file found for {glacier_id} in {latest_dir.name}")
+                else:
+                    logger.warning(f"No results directory found in {latest_dir.name}")
+            else:
+                logger.warning(f"No analysis results found for {glacier_id}")
         
         logger.info(f"Discovered results for {len(glacier_results)} glaciers")
         return glacier_results
