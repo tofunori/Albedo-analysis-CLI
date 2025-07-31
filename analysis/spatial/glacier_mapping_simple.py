@@ -409,58 +409,127 @@ class MultiGlacierMapperSimple:
             logger.error(f"Error loading original MODIS data for {glacier_id}: {e}")
             return None
     
-    def create_individual_glacier_map(self, glacier_id: str, output_dir: Path) -> Optional[plt.Figure]:
-        """Create detailed map for an individual glacier."""
-        logger.info(f"Creating individual map for {glacier_id}")
+    def create_individual_glacier_map(self, glacier_id: str, output_dir: Path, 
+                                     show_pixel_selection: bool = True) -> Optional[plt.Figure]:
+        """
+        Create detailed map for an individual glacier with optional pixel selection visualization.
+        
+        Args:
+            glacier_id: Glacier identifier
+            output_dir: Output directory for saving maps
+            show_pixel_selection: If True, highlights selected pixels for Best Pixel Analysis
+        """
+        logger.info(f"Creating individual map for {glacier_id} (pixel selection: {show_pixel_selection})")
         
         try:
             # Load data
             mask_gdf = self.load_glacier_mask(glacier_id)
             aws_coords = self.get_aws_coordinates(glacier_id)
-            modis_data = self.load_original_modis_data(glacier_id)
+            
+            # Load ALL pixels for context
+            all_modis_data = self.load_original_modis_data(glacier_id, analysis_mode=False)
+            
+            # Load SELECTED pixels for analysis (if applicable)
+            selected_modis_data = None
+            if show_pixel_selection:
+                selected_modis_data = self.load_original_modis_data(glacier_id, analysis_mode=True)
             
             if mask_gdf is None:
                 logger.warning(f"Cannot create map for {glacier_id} - no mask data")
                 return None
             
-            if modis_data is None or modis_data.empty:
+            if all_modis_data is None or all_modis_data.empty:
                 logger.warning(f"Cannot create map for {glacier_id} - no MODIS pixel data")
                 return None
             
             # Create figure with larger size for detailed view
             fig, ax = plt.subplots(1, 1, figsize=(14, 10))
             
-            # Set background color (light gray like the example)
+            # Set background color
             ax.set_facecolor('lightgray')
             
-            # Plot glacier mask with blue outline like the example
+            # Plot glacier mask with blue outline
             mask_gdf.plot(ax=ax, facecolor='lightblue', alpha=0.6,
                          edgecolor='blue', linewidth=2, 
                          label='Glacier Mask')
             
-            # Plot ALL MODIS pixels with glacier fraction color map
-            if 'glacier_fraction' in modis_data.columns:
-                # Use glacier fraction for coloring (like the example)
-                scatter = ax.scatter(modis_data['longitude'], modis_data['latitude'],
-                                   c=modis_data['glacier_fraction'], cmap='viridis',
-                                   s=35, alpha=0.8, 
-                                   label=f'Pixel Locations (n={len(modis_data)})', 
-                                   vmin=0, vmax=1, zorder=3)
-                # Add colorbar
-                cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=30)
-                cbar.set_label('Glacier Fraction', rotation=270, labelpad=20, fontsize=12)
-            else:
-                # Fallback to albedo coloring
-                scatter = ax.scatter(modis_data['longitude'], modis_data['latitude'],
-                                   c=modis_data['albedo'], cmap='viridis',
-                                   s=35, alpha=0.8, 
-                                   label=f'Pixel Locations (n={len(modis_data)})', 
-                                   vmin=0, vmax=1, zorder=3)
-                # Add colorbar
-                cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=30)
-                cbar.set_label('Albedo', rotation=270, labelpad=20, fontsize=12)
+            # Determine if we're showing pixel selection
+            is_showing_selection = (show_pixel_selection and selected_modis_data is not None 
+                                   and not selected_modis_data.empty 
+                                   and len(selected_modis_data) < len(all_modis_data))
             
-            # Plot AWS station with red star like the example
+            if is_showing_selection:
+                # Show pixel selection visualization
+                logger.info(f"Showing pixel selection for {glacier_id}: {len(selected_modis_data)} selected from {len(all_modis_data)} available")
+                
+                # Plot ALL pixels as background context (semi-transparent, small)
+                ax.scatter(all_modis_data['longitude'], all_modis_data['latitude'],
+                          c='lightgray', s=25, alpha=0.4, marker='o',
+                          label=f'Available Pixels (n={len(all_modis_data)})', 
+                          zorder=2)
+                
+                # Plot SELECTED pixels prominently 
+                selected_scatter = ax.scatter(selected_modis_data['longitude'], selected_modis_data['latitude'],
+                                            c='gold', s=200, alpha=0.9, marker='*',
+                                            edgecolor='black', linewidth=2,
+                                            label=f'Selected for Analysis (n={len(selected_modis_data)})', 
+                                            zorder=4)
+                
+                # Add selection annotations for selected pixels
+                for idx, row in selected_modis_data.iterrows():
+                    # Add pixel ID and selection info if available
+                    pixel_id = row.get('pixel_id', 'unknown')
+                    distance_km = row.get('distance_to_aws_km', None)
+                    glacier_frac = row.get('glacier_fraction', None)
+                    
+                    annotation_text = f"Selected Pixel\nID: {pixel_id}"
+                    if distance_km is not None:
+                        annotation_text += f"\nDistance: {distance_km:.1f}km"
+                    if glacier_frac is not None:
+                        annotation_text += f"\nGlacier fraction: {glacier_frac:.3f}"
+                    
+                    ax.annotate(annotation_text, (row['longitude'], row['latitude']),
+                               xytext=(30, 30), textcoords='offset points',
+                               fontsize=9, ha='left', fontweight='bold',
+                               bbox=dict(boxstyle='round,pad=0.3', 
+                                        facecolor='yellow', alpha=0.8, edgecolor='gold'),
+                               arrowprops=dict(arrowstyle='->', color='black', alpha=0.7))
+                
+                # Add colorbar for glacier fraction of selected pixels if available
+                if 'glacier_fraction' in selected_modis_data.columns:
+                    # Create a small invisible scatter for colorbar
+                    cbar_scatter = ax.scatter([], [], c=[], cmap='viridis', vmin=0, vmax=1)
+                    cbar = plt.colorbar(cbar_scatter, ax=ax, shrink=0.6, aspect=20, pad=0.02)
+                    cbar.set_label('Glacier Fraction\n(Selected Pixels)', rotation=270, labelpad=20, fontsize=10)
+                
+                title_suffix = "Best Pixel Selection Map"
+                
+            else:
+                # Show traditional all-pixels visualization
+                if 'glacier_fraction' in all_modis_data.columns:
+                    # Use glacier fraction for coloring
+                    scatter = ax.scatter(all_modis_data['longitude'], all_modis_data['latitude'],
+                                       c=all_modis_data['glacier_fraction'], cmap='viridis',
+                                       s=35, alpha=0.8, 
+                                       label=f'Pixel Locations (n={len(all_modis_data)})', 
+                                       vmin=0, vmax=1, zorder=3)
+                    # Add colorbar
+                    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=30)
+                    cbar.set_label('Glacier Fraction', rotation=270, labelpad=20, fontsize=12)
+                else:
+                    # Fallback to albedo coloring
+                    scatter = ax.scatter(all_modis_data['longitude'], all_modis_data['latitude'],
+                                       c=all_modis_data['albedo'], cmap='viridis',
+                                       s=35, alpha=0.8, 
+                                       label=f'Pixel Locations (n={len(all_modis_data)})', 
+                                       vmin=0, vmax=1, zorder=3)
+                    # Add colorbar
+                    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=30)
+                    cbar.set_label('Albedo', rotation=270, labelpad=20, fontsize=12)
+                
+                title_suffix = "Comprehensive Analysis Map"
+            
+            # Plot AWS station with red star
             if aws_coords:
                 for station_id, coords in aws_coords.items():
                     if coords['lat'] is not None and coords['lon'] is not None:
@@ -469,7 +538,7 @@ class MultiGlacierMapperSimple:
                                  label='AWS Station', zorder=5,
                                  edgecolors='darkred', linewidth=2)
                         
-                        # Add coordinates annotation in a box (like the example)
+                        # Add coordinates annotation in a box
                         lon_dir = 'W' if coords['lon'] < 0 else 'E'
                         lat_dir = 'S' if coords['lat'] < 0 else 'N'
                         lon_val = abs(coords['lon'])
@@ -481,12 +550,15 @@ class MultiGlacierMapperSimple:
                                    bbox=dict(boxstyle='round,pad=0.3', 
                                             facecolor='white', alpha=0.9, edgecolor='red'))
             
-            # Set comprehensive title like the example
+            # Set title based on visualization mode
             glacier_name = self.glaciers[glacier_id]['name']
-            pixel_count = len(modis_data)
             
-            title = f"{glacier_name} Comprehensive Analysis Map\n"
-            title += f"Pixel Locations, MODIS Data, Glacier Mask & AWS Station"
+            if is_showing_selection:
+                title = f"{glacier_name} {title_suffix}\n"
+                title += f"Selected Pixels for Analysis: {len(selected_modis_data)} of {len(all_modis_data)} available"
+            else:
+                title = f"{glacier_name} {title_suffix}\n"
+                title += f"MODIS Pixel Locations, Glacier Mask & AWS Station"
             
             ax.set_title(title, fontsize=14, fontweight='bold', pad=20)
             
@@ -500,21 +572,48 @@ class MultiGlacierMapperSimple:
             # Set equal aspect ratio for proper geographic representation
             ax.set_aspect('equal', adjustable='box')
             
-            # Create comprehensive legend like the example
-            legend_elements = []
-            legend_elements.append(plt.scatter([], [], c='gray', s=20, alpha=0.8, label='Pixel Locations'))
-            legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightblue', 
-                                               edgecolor='blue', alpha=0.6, label='Glacier Mask'))
-            legend_elements.append(plt.scatter([], [], c='red', s=100, marker='*', 
-                                             edgecolors='darkred', label='AWS Station'))
+            # Create legend based on visualization mode
+            if is_showing_selection:
+                # Enhanced legend for pixel selection mode
+                legend_elements = []
+                legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightblue', 
+                                                   edgecolor='blue', alpha=0.6, label='Glacier Mask'))
+                legend_elements.append(plt.scatter([], [], c='lightgray', s=25, alpha=0.4, 
+                                                 marker='o', label=f'Available Pixels (n={len(all_modis_data)})'))
+                legend_elements.append(plt.scatter([], [], c='gold', s=200, alpha=0.9, marker='*',
+                                                 edgecolor='black', linewidth=2, 
+                                                 label=f'Selected for Analysis (n={len(selected_modis_data)})'))
+                legend_elements.append(plt.scatter([], [], c='red', s=100, marker='*', 
+                                                 edgecolors='darkred', label='AWS Station'))
+                
+                # Add selection criteria info to legend
+                if glacier_id in ['haig', 'coropuna']:
+                    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='white', alpha=0,
+                                                       label='Selection: Distance (60%) + Glacier fraction (40%)'))
+                else:
+                    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='white', alpha=0,
+                                                       label='Selection: All pixels used (limited dataset)'))
+            else:
+                # Traditional legend
+                legend_elements = []
+                legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightblue', 
+                                                   edgecolor='blue', alpha=0.6, label='Glacier Mask'))
+                legend_elements.append(plt.scatter([], [], c='gray', s=20, alpha=0.8, 
+                                                 label=f'Pixel Locations (n={len(all_modis_data)})'))
+                legend_elements.append(plt.scatter([], [], c='red', s=100, marker='*', 
+                                                 edgecolors='darkred', label='AWS Station'))
             
             ax.legend(handles=legend_elements, loc='upper right', frameon=True, 
-                     fancybox=True, shadow=True, fontsize=11)
+                     fancybox=True, shadow=True, fontsize=10)
             
             plt.tight_layout()
             
-            # Save plot with high DPI for publication quality
-            output_file = output_dir / "plots" / f"map_individual_{glacier_id}.png"
+            # Save plot with enhanced filename for pixel selection mode
+            if is_showing_selection:
+                output_file = output_dir / "plots" / f"map_individual_{glacier_id}_pixel_selection.png"
+            else:
+                output_file = output_dir / "plots" / f"map_individual_{glacier_id}.png"
+            
             plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
             logger.info(f"Saved individual map for {glacier_id}: {output_file}")
             
@@ -710,9 +809,15 @@ class MultiGlacierMapperSimple:
             logger.error(f"Error creating correlation map for {glacier_id} {method}: {e}")
             return None
     
-    def create_combined_glacier_maps(self, output_dir: Path) -> Optional[plt.Figure]:
-        """Create combined layout showing all three glaciers with exact same design as individual maps."""
-        logger.info("Creating combined 3-glacier layout map")
+    def create_combined_glacier_maps(self, output_dir: Path, show_pixel_selection: bool = True) -> Optional[plt.Figure]:
+        """
+        Create combined layout showing all three glaciers with pixel selection visualization.
+        
+        Args:
+            output_dir: Output directory for saving maps
+            show_pixel_selection: If True, highlights selected pixels for Best Pixel Analysis
+        """
+        logger.info(f"Creating combined 3-glacier layout map (pixel selection: {show_pixel_selection})")
         
         try:
             # Create figure with 1x3 subplot layout 
@@ -728,108 +833,166 @@ class MultiGlacierMapperSimple:
                 ax = axes[idx]
                 logger.info(f"Creating subplot for {glacier_id}")
                 
-                # Load data (same as individual maps)
+                # Load data - both all pixels and selected pixels
                 mask_gdf = self.load_glacier_mask(glacier_id)
                 aws_coords = self.get_aws_coordinates(glacier_id)
-                modis_data = self.load_original_modis_data(glacier_id)
                 
-                if mask_gdf is None or modis_data is None or modis_data.empty:
+                # Load ALL pixels for context
+                all_modis_data = self.load_original_modis_data(glacier_id, analysis_mode=False)
+                
+                # Load SELECTED pixels for analysis (if applicable)
+                selected_modis_data = None
+                if show_pixel_selection:
+                    selected_modis_data = self.load_original_modis_data(glacier_id, analysis_mode=True)
+                
+                if mask_gdf is None or all_modis_data is None or all_modis_data.empty:
                     logger.warning(f"Cannot create subplot for {glacier_id} - missing data")
                     ax.text(0.5, 0.5, f"No data available\nfor {glacier_id}", 
                            ha='center', va='center', transform=ax.transAxes)
                     continue
                 
-                # Set background color (exact same as individual maps)
+                # Set background color
                 ax.set_facecolor('lightgray')
                 
-                # Plot glacier mask with blue outline (exact same styling)
+                # Plot glacier mask with blue outline
                 mask_gdf.plot(ax=ax, facecolor='lightblue', alpha=0.6,
                              edgecolor='blue', linewidth=2, 
                              label='Glacier Mask')
                 
-                # Plot MODIS pixels with exact same styling
-                if 'glacier_fraction' in modis_data.columns:
-                    # Use glacier fraction for coloring
-                    scatter = ax.scatter(modis_data['longitude'], modis_data['latitude'],
-                                       c=modis_data['glacier_fraction'], cmap='viridis',
-                                       s=35, alpha=0.8, 
-                                       label=f'Pixel Locations (n={len(modis_data)})', 
-                                       vmin=0, vmax=1, zorder=3)
-                    # Add colorbar for each subplot
-                    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=30)
-                    cbar.set_label('Glacier Fraction', rotation=270, labelpad=20, fontsize=10)
-                else:
-                    # Fallback to albedo coloring
-                    scatter = ax.scatter(modis_data['longitude'], modis_data['latitude'],
-                                       c=modis_data['albedo'], cmap='viridis',
-                                       s=35, alpha=0.8, 
-                                       label=f'Pixel Locations (n={len(modis_data)})', 
-                                       vmin=0, vmax=1, zorder=3)
-                    # Add colorbar for each subplot
-                    cbar = plt.colorbar(scatter, ax=ax, shrink=0.8, aspect=30)
-                    cbar.set_label('Albedo', rotation=270, labelpad=20, fontsize=10)
+                # Determine if we're showing pixel selection
+                is_showing_selection = (show_pixel_selection and selected_modis_data is not None 
+                                       and not selected_modis_data.empty 
+                                       and len(selected_modis_data) < len(all_modis_data))
                 
-                # Plot AWS station with exact same styling
+                if is_showing_selection:
+                    # Show pixel selection visualization
+                    # Plot ALL pixels as background context (semi-transparent, small)
+                    ax.scatter(all_modis_data['longitude'], all_modis_data['latitude'],
+                              c='lightgray', s=15, alpha=0.3, marker='o',
+                              label=f'Available (n={len(all_modis_data)})', 
+                              zorder=2)
+                    
+                    # Plot SELECTED pixels prominently 
+                    ax.scatter(selected_modis_data['longitude'], selected_modis_data['latitude'],
+                              c='gold', s=150, alpha=0.9, marker='*',
+                              edgecolor='black', linewidth=1.5,
+                              label=f'Selected (n={len(selected_modis_data)})', 
+                              zorder=4)
+                    
+                    title_suffix = "Best Pixel Selection"
+                else:
+                    # Show traditional all-pixels visualization
+                    if 'glacier_fraction' in all_modis_data.columns:
+                        # Use glacier fraction for coloring
+                        scatter = ax.scatter(all_modis_data['longitude'], all_modis_data['latitude'],
+                                           c=all_modis_data['glacier_fraction'], cmap='viridis',
+                                           s=25, alpha=0.8, 
+                                           label=f'Pixels (n={len(all_modis_data)})', 
+                                           vmin=0, vmax=1, zorder=3)
+                        # Add smaller colorbar for each subplot
+                        cbar = plt.colorbar(scatter, ax=ax, shrink=0.6, aspect=20)
+                        cbar.set_label('Glacier Fraction', rotation=270, labelpad=15, fontsize=9)
+                    else:
+                        # Fallback to albedo coloring
+                        scatter = ax.scatter(all_modis_data['longitude'], all_modis_data['latitude'],
+                                           c=all_modis_data['albedo'], cmap='viridis',
+                                           s=25, alpha=0.8, 
+                                           label=f'Pixels (n={len(all_modis_data)})', 
+                                           vmin=0, vmax=1, zorder=3)
+                        # Add smaller colorbar for each subplot
+                        cbar = plt.colorbar(scatter, ax=ax, shrink=0.6, aspect=20)
+                        cbar.set_label('Albedo', rotation=270, labelpad=15, fontsize=9)
+                    
+                    title_suffix = "Analysis Map"
+                
+                # Plot AWS station with same styling
                 if aws_coords:
                     for station_id, coords in aws_coords.items():
                         if coords['lat'] is not None and coords['lon'] is not None:
                             ax.scatter(coords['lon'], coords['lat'], 
-                                     c='red', s=200, marker='*',
+                                     c='red', s=150, marker='*',
                                      label='AWS Station', zorder=5,
                                      edgecolors='darkred', linewidth=2)
                             
-                            # Add coordinates annotation in a box (exact same styling)
+                            # Add coordinates annotation in a box
                             lon_dir = 'W' if coords['lon'] < 0 else 'E'
                             lat_dir = 'S' if coords['lat'] < 0 else 'N'
                             lon_val = abs(coords['lon'])
                             lat_val = abs(coords['lat'])
-                            coord_text = f"AWS Station\\n{lon_val:.0f}deg{lon_dir} {lat_val:.0f}deg{lat_dir}"
+                            coord_text = f"AWS Station\n{lon_val:.0f}deg{lon_dir} {lat_val:.0f}deg{lat_dir}"
                             ax.annotate(coord_text, (coords['lon'], coords['lat']),
-                                       xytext=(20, 20), textcoords='offset points',
+                                       xytext=(15, 15), textcoords='offset points',
                                        fontsize=8, ha='left', fontweight='bold',
                                        bbox=dict(boxstyle='round,pad=0.3', 
                                                 facecolor='white', alpha=0.9, edgecolor='red'))
                 
-                # Set title for each subplot (exact same format)
+                # Set title for each subplot based on visualization mode
                 glacier_name = self.glaciers[glacier_id]['name']
-                pixel_count = len(modis_data)
                 
-                title = f"{glacier_name} Analysis Map\\n"
-                title += f"Pixel Locations, MODIS Data, Glacier Mask & AWS Station"
+                if is_showing_selection:
+                    title = f"{glacier_name} {title_suffix}\n"
+                    title += f"Selected: {len(selected_modis_data)} of {len(all_modis_data)} pixels"
+                else:
+                    title = f"{glacier_name} {title_suffix}\n"
+                    title += f"MODIS Data, Glacier Mask & AWS Station"
                 
-                ax.set_title(title, fontsize=12, fontweight='bold', pad=15)
+                ax.set_title(title, fontsize=11, fontweight='bold', pad=15)
                 
-                # Set axis labels (exact same styling)
+                # Set axis labels
                 ax.set_xlabel('Longitude (°)', fontsize=10, fontweight='bold')
                 ax.set_ylabel('Latitude (°)', fontsize=10, fontweight='bold')
                 
-                # Add grid with exact same styling
+                # Add grid
                 ax.grid(True, alpha=0.3, linestyle='-', linewidth=0.5)
                 
                 # Set equal aspect ratio for proper geographic representation
                 ax.set_aspect('equal', adjustable='box')
                 
-                # Create legend for each subplot (exact same as individual)
-                legend_elements = []
-                legend_elements.append(plt.scatter([], [], c='gray', s=20, alpha=0.8, label='Pixel Locations'))
-                legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightblue', 
-                                                   edgecolor='blue', alpha=0.6, label='Glacier Mask'))
-                legend_elements.append(plt.scatter([], [], c='red', s=100, marker='*', 
-                                                 edgecolors='darkred', label='AWS Station'))
+                # Create legend based on visualization mode
+                if is_showing_selection:
+                    # Enhanced legend for pixel selection mode
+                    legend_elements = []
+                    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightblue', 
+                                                       edgecolor='blue', alpha=0.6, label='Glacier Mask'))
+                    legend_elements.append(plt.scatter([], [], c='lightgray', s=15, alpha=0.3, 
+                                                     marker='o', label=f'Available (n={len(all_modis_data)})'))
+                    legend_elements.append(plt.scatter([], [], c='gold', s=150, alpha=0.9, marker='*',
+                                                     edgecolor='black', linewidth=1.5, 
+                                                     label=f'Selected (n={len(selected_modis_data)})'))
+                    legend_elements.append(plt.scatter([], [], c='red', s=75, marker='*', 
+                                                     edgecolors='darkred', label='AWS Station'))
+                else:
+                    # Traditional legend
+                    legend_elements = []
+                    legend_elements.append(plt.Rectangle((0, 0), 1, 1, facecolor='lightblue', 
+                                                       edgecolor='blue', alpha=0.6, label='Glacier Mask'))
+                    legend_elements.append(plt.scatter([], [], c='gray', s=15, alpha=0.8, 
+                                                     label=f'Pixels (n={len(all_modis_data)})'))
+                    legend_elements.append(plt.scatter([], [], c='red', s=75, marker='*', 
+                                                     edgecolors='darkred', label='AWS Station'))
                 
                 ax.legend(handles=legend_elements, loc='upper right', frameon=True, 
-                         fancybox=True, shadow=True, fontsize=9)
+                         fancybox=True, shadow=True, fontsize=8)
             
-            # Add overall title for the combined figure
-            fig.suptitle('Multi-Glacier Comprehensive Analysis Maps\\n' +
-                        'Pixel Locations, MODIS Data, Glacier Masks & AWS Stations', 
-                        fontsize=16, fontweight='bold', y=0.95)
+            # Add overall title for the combined figure based on mode
+            if show_pixel_selection:
+                main_title = 'Multi-Glacier Best Pixel Selection Maps\n'
+                main_title += 'Selected Pixels for Analysis: Optimized for Distance to AWS + Glacier Fraction'
+            else:
+                main_title = 'Multi-Glacier Comprehensive Analysis Maps\n'
+                main_title += 'Pixel Locations, MODIS Data, Glacier Masks & AWS Stations'
+                
+            fig.suptitle(main_title, fontsize=14, fontweight='bold', y=0.95)
             
             plt.tight_layout()
             plt.subplots_adjust(top=0.88)  # Make room for main title
             
-            # Save plot with high DPI for publication quality
-            output_file = output_dir / "plots" / "map_combined_all_glaciers.png"
+            # Save plot with enhanced filename for pixel selection mode
+            if show_pixel_selection:
+                output_file = output_dir / "plots" / "map_combined_all_glaciers_pixel_selection.png"
+            else:
+                output_file = output_dir / "plots" / "map_combined_all_glaciers.png"
+                
             plt.savefig(output_file, dpi=300, bbox_inches='tight', facecolor='white')
             logger.info(f"Saved combined glacier map: {output_file}")
             
@@ -839,9 +1002,15 @@ class MultiGlacierMapperSimple:
             logger.error(f"Error creating combined glacier map: {e}")
             return None
     
-    def generate_all_maps(self, output_dir: Path) -> None:
-        """Generate individual glacier maps and combined layout map."""
-        logger.info("Starting generation of all glacier maps...")
+    def generate_all_maps(self, output_dir: Path, show_pixel_selection: bool = True) -> None:
+        """
+        Generate individual glacier maps and combined layout map.
+        
+        Args:
+            output_dir: Output directory for saving maps
+            show_pixel_selection: If True, highlights selected pixels for Best Pixel Analysis
+        """
+        logger.info(f"Starting generation of all glacier maps (pixel selection: {show_pixel_selection})...")
         
         try:
             # Ensure plots directory exists
@@ -850,10 +1019,10 @@ class MultiGlacierMapperSimple:
             
             map_count = 0
             
-            # Create individual glacier maps
+            # Create individual glacier maps with pixel selection visualization
             for glacier_id in self.glaciers.keys():
                 logger.info(f"Creating individual map for {glacier_id}...")
-                fig = self.create_individual_glacier_map(glacier_id, output_dir)
+                fig = self.create_individual_glacier_map(glacier_id, output_dir, show_pixel_selection)
                 if fig:
                     plt.close(fig)  # Free memory
                     map_count += 1
@@ -861,9 +1030,9 @@ class MultiGlacierMapperSimple:
                 else:
                     logger.warning(f"[FAIL] Failed to create individual map for {glacier_id}")
             
-            # Create combined layout map
+            # Create combined layout map with pixel selection
             logger.info("Creating combined 3-glacier layout map...")
-            combined_fig = self.create_combined_glacier_maps(output_dir)
+            combined_fig = self.create_combined_glacier_maps(output_dir, show_pixel_selection)
             if combined_fig:
                 plt.close(combined_fig)  # Free memory
                 map_count += 1

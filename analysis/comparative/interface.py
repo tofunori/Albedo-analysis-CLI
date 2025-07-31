@@ -455,7 +455,7 @@ class ComparativeAnalysisInterface:
             
             # Generate pixel selection maps
             print("   [MAPS] Generating pixel selection maps...")
-            self.mapper.generate_all_maps(self.output_directory)
+            self.mapper.generate_all_maps(self.output_directory, show_pixel_selection=True)
             self._create_pixel_selection_summary(selected_data)
             
             # Export all results
