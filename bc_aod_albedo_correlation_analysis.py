@@ -6,25 +6,16 @@ This script analyzes the relationship between black carbon aerosol optical depth
 from MERRA2 data and surface albedo from MODIS MOD09GA data for Haig Glacier.
 """
 
-import sys
 import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sns
 from datetime import datetime
 from scipy import stats
 from scipy.stats import pearsonr, spearmanr
 import logging
 from pathlib import Path
 from typing import Tuple, Dict, Any
-
-# Import existing framework modules
-from visualization.plots.correlation_plots import CorrelationPlotter
-from visualization.plots.time_series_plots import TimeSeriesPlotter
-from visualization.plots.base import BasePlotter
 
 # Set up logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -48,11 +39,6 @@ class BCAlbedoCorrelationAnalyzer:
         self.output_dir.mkdir(parents=True, exist_ok=True)
         (self.output_dir / "plots").mkdir(exist_ok=True)
         (self.output_dir / "results").mkdir(exist_ok=True)
-        
-        # Initialize plotters with basic config
-        config = {'output_dir': str(self.output_dir / "plots")}
-        self.correlation_plotter = CorrelationPlotter(config)
-        self.timeseries_plotter = TimeSeriesPlotter(config)
         
         logger.info(f"Initialized BC-Albedo correlation analyzer. Output: {self.output_dir}")
     
@@ -424,79 +410,6 @@ class BCAlbedoCorrelationAnalyzer:
         
         logger.info("Enhanced scatter plot saved")
     
-    def create_precipitation_scatter_plots(self, data: pd.DataFrame, stats: Dict[str, Any]) -> None:
-        """Create scatter plots for precipitation variables vs albedo."""
-        logger.info("Creating precipitation vs albedo scatter plots...")
-        
-        # Create subplot layout for 3 precipitation plots
-        fig, axes = plt.subplots(1, 3, figsize=(18, 6))
-        
-        # Total Precipitation vs Albedo
-        ax1 = axes[0]
-        scatter1 = ax1.scatter(data['total_precip_mm'], data['albedo_mean'], 
-                             c=data['temperature_c'], s=60, alpha=0.7, 
-                             cmap='coolwarm', edgecolors='black', linewidth=0.5)
-        
-        # Add regression line
-        z1 = np.polyfit(data['total_precip_mm'], data['albedo_mean'], 1)
-        p1 = np.poly1d(z1)
-        x_reg1 = np.linspace(data['total_precip_mm'].min(), data['total_precip_mm'].max(), 100)
-        ax1.plot(x_reg1, p1(x_reg1), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
-        
-        ax1.set_xlabel('Total Precipitation (mm)', fontsize=12)
-        ax1.set_ylabel('MODIS Albedo (Daily Mean)', fontsize=12)
-        ax1.set_title(f'Total Precipitation vs Albedo\nr = {stats["total_precip_albedo_pearson_r"]:.4f} (p = {stats["total_precip_albedo_pearson_p"]:.4f})', 
-                     fontsize=12, fontweight='bold')
-        ax1.grid(True, alpha=0.3)
-        
-        # Snowfall vs Albedo
-        ax2 = axes[1]
-        scatter2 = ax2.scatter(data['snowfall_mm'], data['albedo_mean'], 
-                             c=data['temperature_c'], s=60, alpha=0.7, 
-                             cmap='coolwarm', edgecolors='black', linewidth=0.5)
-        
-        # Add regression line
-        z2 = np.polyfit(data['snowfall_mm'], data['albedo_mean'], 1)
-        p2 = np.poly1d(z2)
-        x_reg2 = np.linspace(data['snowfall_mm'].min(), data['snowfall_mm'].max(), 100)
-        ax2.plot(x_reg2, p2(x_reg2), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
-        
-        ax2.set_xlabel('Snowfall (mm)', fontsize=12)
-        ax2.set_ylabel('MODIS Albedo (Daily Mean)', fontsize=12)
-        ax2.set_title(f'Snowfall vs Albedo\nr = {stats["snow_albedo_pearson_r"]:.4f} (p = {stats["snow_albedo_pearson_p"]:.4f})', 
-                     fontsize=12, fontweight='bold')
-        ax2.grid(True, alpha=0.3)
-        
-        # Rainfall vs Albedo
-        ax3 = axes[2]
-        scatter3 = ax3.scatter(data['rainfall_mm'], data['albedo_mean'], 
-                             c=data['temperature_c'], s=60, alpha=0.7, 
-                             cmap='coolwarm', edgecolors='black', linewidth=0.5)
-        
-        # Add regression line
-        z3 = np.polyfit(data['rainfall_mm'], data['albedo_mean'], 1)
-        p3 = np.poly1d(z3)
-        x_reg3 = np.linspace(data['rainfall_mm'].min(), data['rainfall_mm'].max(), 100)
-        ax3.plot(x_reg3, p3(x_reg3), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
-        
-        ax3.set_xlabel('Rainfall (mm)', fontsize=12)
-        ax3.set_ylabel('MODIS Albedo (Daily Mean)', fontsize=12)
-        ax3.set_title(f'Rainfall vs Albedo\nr = {stats["rain_albedo_pearson_r"]:.4f} (p = {stats["rain_albedo_pearson_p"]:.4f})', 
-                     fontsize=12, fontweight='bold')
-        ax3.grid(True, alpha=0.3)
-        
-        # Add colorbar for temperature (shared across all plots)
-        cbar = fig.colorbar(scatter1, ax=axes, shrink=0.8, pad=0.02)
-        cbar.set_label('Air Temperature (°C)', fontsize=12)
-        
-        plt.suptitle('Precipitation Variables vs Surface Albedo (Colored by Temperature)\nHaig Glacier (June-September 2022-2024)', 
-                     fontsize=14, fontweight='bold', y=1.02)
-        plt.tight_layout()
-        plt.savefig(self.output_dir / "plots" / "precipitation_albedo_scatter.png", dpi=300, bbox_inches='tight')
-        plt.close()
-        
-        logger.info("Precipitation scatter plots saved")
-    
     def create_correlation_matrix_heatmap(self, data: pd.DataFrame, stats: Dict[str, Any]) -> None:
         """Create correlation matrix heatmap for all five variables."""
         logger.info("Creating 5x5 correlation matrix heatmap...")
@@ -694,45 +607,129 @@ class BCAlbedoCorrelationAnalyzer:
         
         logger.info("Time series plot saved")
     
-    def create_precipitation_time_series_plot(self, data: pd.DataFrame) -> None:
-        """Create precipitation time series plot with albedo."""
-        logger.info("Creating precipitation time series plot...")
+    def create_comprehensive_scatter_grid(self, data: pd.DataFrame, stats: Dict[str, Any]) -> None:
+        """Create comprehensive 6-panel scatter plot grid showing all variable relationships."""
+        logger.info("Creating comprehensive 6-panel scatter plot grid...")
         
-        # Sort data by date to ensure proper line plotting
-        data_sorted = data.sort_values('date').reset_index(drop=True)
+        fig, axes = plt.subplots(2, 3, figsize=(20, 12))
+        fig.suptitle('Comprehensive Variable Relationships: BC AOD, Temperature, Precipitation, and Albedo\nHaig Glacier (June-September 2022-2024)', 
+                    fontsize=16, fontweight='bold')
         
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(14, 10), sharex=True)
-        
-        # Top panel: Precipitation components
-        ax1.plot(data_sorted['date'], data_sorted['total_precip_mm'], 
-                color='darkblue', linewidth=2, alpha=0.8, label='Total Precipitation')
-        ax1.plot(data_sorted['date'], data_sorted['snowfall_mm'], 
-                color='lightblue', linewidth=2, alpha=0.8, label='Snowfall')
-        ax1.plot(data_sorted['date'], data_sorted['rainfall_mm'], 
-                color='orange', linewidth=2, alpha=0.8, label='Rainfall')
-        
-        ax1.set_ylabel('Precipitation (mm)', fontsize=12)
-        ax1.set_title('Precipitation Components vs Surface Albedo\nHaig Glacier (June-September 2022-2024)', 
-                     fontsize=14, fontweight='bold')
-        ax1.legend(loc='upper right')
+        # Panel 1: BC AOD vs Albedo (colored by temperature)
+        ax1 = axes[0, 0]
+        scatter1 = ax1.scatter(data['bc_aod_regional'], data['albedo_mean'], 
+                              c=data['temperature_c'], s=50, alpha=0.7, 
+                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
+        z1 = np.polyfit(data['bc_aod_regional'], data['albedo_mean'], 1)
+        p1 = np.poly1d(z1)
+        x_reg1 = np.linspace(data['bc_aod_regional'].min(), data['bc_aod_regional'].max(), 100)
+        ax1.plot(x_reg1, p1(x_reg1), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
+        ax1.set_xlabel('BC AOD (Regional)', fontsize=11)
+        ax1.set_ylabel('MODIS Albedo', fontsize=11)
+        ax1.set_title(f'BC AOD vs Albedo\nr = {stats["bc_albedo_pearson_r"]:.3f}, p = {stats["bc_albedo_pearson_p"]:.4f}', fontsize=12)
         ax1.grid(True, alpha=0.3)
         
-        # Bottom panel: Albedo
-        ax2.plot(data_sorted['date'], data_sorted['albedo_mean'], 
-                color='green', linewidth=2, alpha=0.8, label='MODIS Albedo (Mean)')
-        
-        ax2.set_xlabel('Date', fontsize=12)
-        ax2.set_ylabel('MODIS Albedo (Daily Mean)', fontsize=12)
-        ax2.legend(loc='upper right')
+        # Panel 2: Temperature vs Albedo (colored by temperature)
+        ax2 = axes[0, 1]
+        scatter2 = ax2.scatter(data['temperature_c'], data['albedo_mean'], 
+                              c=data['temperature_c'], s=50, alpha=0.7, 
+                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
+        z2 = np.polyfit(data['temperature_c'], data['albedo_mean'], 1)
+        p2 = np.poly1d(z2)
+        x_reg2 = np.linspace(data['temperature_c'].min(), data['temperature_c'].max(), 100)
+        ax2.plot(x_reg2, p2(x_reg2), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
+        ax2.set_xlabel('Air Temperature (°C)', fontsize=11)
+        ax2.set_ylabel('MODIS Albedo', fontsize=11)
+        ax2.set_title(f'Temperature vs Albedo\nr = {stats["temp_albedo_pearson_r"]:.3f}, p = {stats["temp_albedo_pearson_p"]:.4f}', fontsize=12)
         ax2.grid(True, alpha=0.3)
         
-        # Format x-axis
-        plt.xticks(rotation=45)
+        # Panel 3: Total Precipitation vs Albedo (colored by temperature)
+        ax3 = axes[0, 2]
+        scatter3 = ax3.scatter(data['total_precip_mm'], data['albedo_mean'], 
+                              c=data['temperature_c'], s=50, alpha=0.7, 
+                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
+        z3 = np.polyfit(data['total_precip_mm'], data['albedo_mean'], 1)
+        p3 = np.poly1d(z3)
+        x_reg3 = np.linspace(data['total_precip_mm'].min(), data['total_precip_mm'].max(), 100)
+        ax3.plot(x_reg3, p3(x_reg3), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
+        ax3.set_xlabel('Total Precipitation (mm)', fontsize=11)
+        ax3.set_ylabel('MODIS Albedo', fontsize=11)
+        ax3.set_title(f'Total Precip vs Albedo\nr = {stats["total_precip_albedo_pearson_r"]:.3f}, p = {stats["total_precip_albedo_pearson_p"]:.4f}', fontsize=12)
+        ax3.grid(True, alpha=0.3)
+        
+        # Panel 4: Snowfall vs Albedo (colored by temperature)
+        ax4 = axes[1, 0]
+        scatter4 = ax4.scatter(data['snowfall_mm'], data['albedo_mean'], 
+                              c=data['temperature_c'], s=50, alpha=0.7, 
+                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
+        z4 = np.polyfit(data['snowfall_mm'], data['albedo_mean'], 1)
+        p4 = np.poly1d(z4)
+        x_reg4 = np.linspace(data['snowfall_mm'].min(), data['snowfall_mm'].max(), 100)
+        ax4.plot(x_reg4, p4(x_reg4), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
+        ax4.set_xlabel('Snowfall (mm)', fontsize=11)
+        ax4.set_ylabel('MODIS Albedo', fontsize=11)
+        ax4.set_title(f'Snowfall vs Albedo\nr = {stats["snow_albedo_pearson_r"]:.3f}, p = {stats["snow_albedo_pearson_p"]:.4f}', fontsize=12)
+        ax4.grid(True, alpha=0.3)
+        
+        # Panel 5: Rainfall vs Albedo (colored by temperature)
+        ax5 = axes[1, 1]
+        scatter5 = ax5.scatter(data['rainfall_mm'], data['albedo_mean'], 
+                              c=data['temperature_c'], s=50, alpha=0.7, 
+                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
+        z5 = np.polyfit(data['rainfall_mm'], data['albedo_mean'], 1)
+        p5 = np.poly1d(z5)
+        x_reg5 = np.linspace(data['rainfall_mm'].min(), data['rainfall_mm'].max(), 100)
+        ax5.plot(x_reg5, p5(x_reg5), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
+        ax5.set_xlabel('Rainfall (mm)', fontsize=11)
+        ax5.set_ylabel('MODIS Albedo', fontsize=11)
+        ax5.set_title(f'Rainfall vs Albedo\nr = {stats["rain_albedo_pearson_r"]:.3f}, p = {stats["rain_albedo_pearson_p"]:.4f}', fontsize=12)
+        ax5.grid(True, alpha=0.3)
+        
+        # Panel 6: Multiple Regression Model Fit (observed vs predicted)
+        ax6 = axes[1, 2]
+        # Calculate predicted values from multiple regression
+        n = len(data)
+        X = np.column_stack([
+            np.ones(n), 
+            data['bc_aod_regional'], 
+            data['temperature_c'],
+            data['total_precip_mm'],
+            data['snowfall_mm']
+        ])
+        y = data['albedo_mean'].values
+        try:
+            beta = np.linalg.solve(X.T @ X, X.T @ y)
+            y_pred = X @ beta
+            
+            scatter6 = ax6.scatter(data['albedo_mean'], y_pred, 
+                                  c=data['temperature_c'], s=50, alpha=0.7, 
+                                  cmap='coolwarm', edgecolors='black', linewidth=0.3)
+            
+            # Add 1:1 line
+            min_val = min(data['albedo_mean'].min(), y_pred.min())
+            max_val = max(data['albedo_mean'].max(), y_pred.max())
+            ax6.plot([min_val, max_val], [min_val, max_val], 'k--', alpha=0.8, linewidth=2, label='1:1 Line')
+            
+            ax6.set_xlabel('Observed Albedo', fontsize=11)
+            ax6.set_ylabel('Predicted Albedo\n(4-predictor Model)', fontsize=11)
+            ax6.set_title(f'Multiple Regression Model\nR² = {stats["multiple_r_squared"]:.3f}, Adj R² = {stats["adjusted_r_squared"]:.3f}', fontsize=12)
+            ax6.legend(loc='upper left', fontsize=9)
+        except:
+            ax6.text(0.5, 0.5, 'Model fit\nnot available', ha='center', va='center', transform=ax6.transAxes)
+            ax6.set_title('Multiple Regression Model', fontsize=12)
+        
+        ax6.grid(True, alpha=0.3)
+        
+        # Add colorbar for temperature (shared across all plots) - positioned to avoid overlap
+        cbar = fig.colorbar(scatter1, ax=axes, shrink=0.8, pad=0.05, aspect=30)
+        cbar.set_label('Air Temperature (°C)', fontsize=12)
+        
         plt.tight_layout()
-        plt.savefig(self.output_dir / "plots" / "precipitation_albedo_timeseries.png", dpi=300, bbox_inches='tight')
+        plt.subplots_adjust(right=0.92)  # Make room for colorbar
+        plt.savefig(self.output_dir / "plots" / "comprehensive_scatter_grid.png", dpi=300, bbox_inches='tight')
         plt.close()
         
-        logger.info("Precipitation time series plot saved")
+        logger.info("Comprehensive scatter grid saved")
     
     def create_yearly_time_series_plots(self, data: pd.DataFrame) -> None:
         """Create 3-panel yearly time series plots with BC AOD, Albedo, and Temperature."""
@@ -1079,10 +1076,8 @@ class BCAlbedoCorrelationAnalyzer:
         
         # Create visualizations
         self.create_scatter_plot(data, stats)  # Enhanced with temperature coloring
-        self.create_precipitation_scatter_plots(data, stats)  # New: precipitation scatter plots
-        self.create_correlation_matrix_heatmap(data, stats)  # Updated: 5x5 correlation matrix
-        self.create_precipitation_time_series_plot(data)  # New: precipitation time series
-        self.create_multi_panel_scatter_grid(data, stats)  # Multi-panel grid
+        self.create_comprehensive_scatter_grid(data, stats)  # New: comprehensive 6-panel scatter grid
+        self.create_correlation_matrix_heatmap(data, stats)  # Updated: 6x6 correlation matrix
         self.create_yearly_time_series_plots(data)
         seasonal_stats = self.create_seasonal_analysis(data)
         self.create_residual_analysis(data)
