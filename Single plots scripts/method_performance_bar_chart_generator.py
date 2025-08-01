@@ -67,19 +67,15 @@ CONFIG = {
         'mod10a1': '#8c564b',    # Brown (Terra)
         'myd10a1': '#e377c2'     # Pink (Aqua)
     },
-    'methods': ['MOD09GA', 'MYD09GA', 'MCD43A3', 'MOD10A1', 'MYD10A1'],
+    'methods': ['MOD09GA', 'MCD43A3', 'MOD10A1'],
     'method_mapping': {
         # Map different case variations to standard format
         'mcd43a3': 'MCD43A3',
         'MCD43A3': 'MCD43A3',
         'mod09ga': 'MOD09GA', 
         'MOD09GA': 'MOD09GA',
-        'myd09ga': 'MYD09GA',  # Keep Terra/Aqua separate for this visualization
-        'MYD09GA': 'MYD09GA',
         'mod10a1': 'MOD10A1',
-        'MOD10A1': 'MOD10A1',
-        'myd10a1': 'MYD10A1',  # Keep Terra/Aqua separate for this visualization
-        'MYD10A1': 'MYD10A1'
+        'MOD10A1': 'MOD10A1'
     },
     'outlier_threshold': 2.5,
     'quality_filters': {
@@ -336,7 +332,10 @@ class DataProcessor:
         logger.info(f"Merging and processing data for {glacier_id}...")
         
         results = []
-        available_methods = modis_data['method'].unique()
+        
+        # Filter to only include methods we want to analyze
+        target_methods = self.config['methods']
+        available_methods = [m for m in modis_data['method'].unique() if m in target_methods]
         
         for method in available_methods:
             # Filter MODIS data for this method
@@ -561,7 +560,7 @@ class MethodPerformanceVisualizer:
                     ax.set_title(metric_title, fontweight='bold')
         
         # Add legend for method colors (show all possible methods)
-        legend_methods = ['MOD09GA', 'MYD09GA', 'MCD43A3', 'MOD10A1', 'MYD10A1']
+        legend_methods = ['MOD09GA', 'MCD43A3', 'MOD10A1']
         legend_elements = [plt.Rectangle((0,0),1,1, facecolor=self.config['colors'].get(method, 'gray'), 
                                        edgecolor='black', alpha=0.7, label=method) 
                           for method in legend_methods]
@@ -570,7 +569,7 @@ class MethodPerformanceVisualizer:
                                            label='Best Performance'))
         
         fig.legend(legend_elements, [elem.get_label() for elem in legend_elements], 
-                  loc='center', bbox_to_anchor=(0.5, 0.02), ncol=6, fontsize=10)
+                  loc='center', bbox_to_anchor=(0.5, 0.02), ncol=4, fontsize=10)
         
         plt.tight_layout()
         plt.subplots_adjust(bottom=0.08)  # Make room for legend
