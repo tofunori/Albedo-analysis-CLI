@@ -39,7 +39,7 @@ class ComparativeAnalysisInterface:
     - Automatic data discovery and validation
     - Pixel selection optimization (all pixels vs best pixels)
     - Statistical testing suite (ANOVA, regional comparisons, correlations)
-    - 7 types of publication-ready visualizations
+    - 8 types of publication-ready visualizations
     - Geographic mapping with pixel selection visualization
     - Comprehensive reporting and data export
     
@@ -106,7 +106,7 @@ class ComparativeAnalysisInterface:
         print("   • Environmental correlation analysis")
         print("   • Method consistency assessment")
         print()
-        print("[PLOTS] Advanced Visualizations (7 plot types):")
+        print("[PLOTS] Advanced Visualizations (9 plot types):")
         print("   • Method performance matrix heatmap")
         print("   • AWS vs MODIS albedo scatterplot matrix (3×3)")
         print("   • Glacier-specific method performance analysis")
@@ -114,8 +114,10 @@ class ComparativeAnalysisInterface:
         print("   • Bias comparison radar charts")
         print("   • Combined statistical confidence dashboard")
         print("   • Multi-glacier mapping suite (individual + overview + correlation maps)")
+        print("   • Seasonal analysis: Multi-glacier monthly boxplots")
+        print("   • Seasonal time series: Continuous temporal analysis (NEW)")
         print()
-        print("📋 Comprehensive Reporting:")
+        print("[REPORT] Comprehensive Reporting:")
         print("   • Detailed statistical test results")
         print("   • Method ranking recommendations")
         print("   • Publication-ready visualizations")
@@ -130,7 +132,7 @@ class ComparativeAnalysisInterface:
         print("   → Uses all pixels: 2/13/197 (Athabasca/Haig/Coropuna)")
         print()
         print("2. Best Pixel Analysis (Optimized pixels - RECOMMENDED)")
-        print("   → Comprehensive analysis with 7 visualization types")
+        print("   → Comprehensive analysis with 9 visualization types")
         print("   → Uses selected pixels: 2/2/2 (closest to AWS stations)")
         print("   → Includes spatial mapping and statistical testing")
         print()
@@ -268,7 +270,7 @@ class ComparativeAnalysisInterface:
         
     def _display_key_findings(self, summary: Dict[str, Any]) -> None:
         """Display key findings from the analysis."""
-        print("\n📋 Key Findings:")
+        print("\n[FINDINGS] Key Findings:")
         print("-" * 20)
         
         print(f"   • Analyzed {summary['total_glaciers']} glaciers with {summary['total_methods']} MODIS methods")
@@ -441,7 +443,7 @@ class ComparativeAnalysisInterface:
             statistical_results = self.statistician.run_comprehensive_analysis(self.aggregated_data)
             
             # Generate all visualizations
-            print("   [PLOTS] Generating all visualizations (7 plot types)...")
+            print("   [PLOTS] Generating all visualizations (8 plot types)...")
             try:
                 # Set pixel selection information for enhanced plot labeling
                 pixel_counts = {glacier_id: len(data) for glacier_id, data in selected_data.items()}
@@ -469,7 +471,7 @@ class ComparativeAnalysisInterface:
             print(f"\n[SUCCESS] COMPLETE COMPARATIVE ANALYSIS WITH SELECTED PIXELS FINISHED!")
             print("=" * 60)
             print(f"Results saved to: {self.output_directory}")
-            print(f"Generated 7 visualization types + pixel selection maps")
+            print(f"Generated 9 visualization types + pixel selection maps")
             print(f"Completed 6 statistical test categories")
             print()
             print("Key findings:")
