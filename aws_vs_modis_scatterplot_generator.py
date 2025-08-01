@@ -49,7 +49,7 @@ CONFIG = {
     },
     'outlier_threshold': 2.5,
     'quality_filters': {'min_glacier_fraction': 0.1, 'min_observations': 10},
-    'visualization': {'figsize': (15, 12), 'dpi': 300, 'style': 'seaborn-v0_8'}
+    'visualization': {'figsize': (12, 12), 'dpi': 300, 'style': 'seaborn-v0_8'}
 }
 
 
@@ -405,8 +405,7 @@ class ScatterplotVisualizer:
             for j, method in enumerate(methods):
                 self._create_subplot(axes[i, j], glacier_data, glacier_id, method)
         
-        plt.tight_layout()
-        plt.subplots_adjust(wspace=0.05)
+        plt.subplots_adjust(left=0.08, right=0.95, top=0.92, bottom=0.08, wspace=0.15, hspace=0.35)
         
         if output_path:
             self._save_figure(fig, output_path)
@@ -451,7 +450,7 @@ class ScatterplotVisualizer:
             aws_vals, modis_vals = method_data['aws_values'], method_data['modis_values']
             color = self.config['colors'][glacier_id]
             
-            ax.scatter(aws_vals, modis_vals, alpha=0.6, s=20, color=color, zorder=3)
+            ax.scatter(aws_vals, modis_vals, alpha=0.6, s=20, color=color, zorder=2)
             ax.plot([0, 1], [0, 1], 'k--', alpha=0.7, linewidth=1, zorder=1)
             
             # Add trend line
@@ -460,7 +459,7 @@ class ScatterplotVisualizer:
                     coeffs = np.polyfit(aws_vals, modis_vals, 1)
                     trend_line = np.poly1d(coeffs)
                     x_range = np.linspace(aws_vals.min(), aws_vals.max(), 100)
-                    ax.plot(x_range, trend_line(x_range), 'r-', alpha=0.8, linewidth=1.5, zorder=2)
+                    ax.plot(x_range, trend_line(x_range), 'r-', alpha=0.7, linewidth=2, zorder=3)
                 except Exception:
                     pass
             
