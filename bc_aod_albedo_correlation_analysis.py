@@ -6,6 +6,10 @@ This script analyzes the relationship between black carbon aerosol optical depth
 from MERRA2 data and surface albedo from MODIS MOD09GA data for Haig Glacier.
 """
 
+# ============================================================================
+# IMPORTS AND DEPENDENCIES
+# ============================================================================
+
 import os
 import pandas as pd
 import numpy as np
@@ -17,9 +21,16 @@ import logging
 from pathlib import Path
 from typing import Tuple, Dict, Any
 
-# Set up logging
+# ============================================================================
+# LOGGING CONFIGURATION
+# ============================================================================
+
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
+
+# ============================================================================
+# MAIN ANALYZER CLASS
+# ============================================================================
 
 class BCAlbedoCorrelationAnalyzer:
     """Analyzer for Black Carbon AOD vs Albedo correlation analysis."""
@@ -41,6 +52,10 @@ class BCAlbedoCorrelationAnalyzer:
         (self.output_dir / "results").mkdir(exist_ok=True)
         
         logger.info(f"Initialized BC-Albedo correlation analyzer. Output: {self.output_dir}")
+    
+    # ========================================================================
+    # DATA LOADING AND PROCESSING METHODS
+    # ========================================================================
     
     def load_and_process_data(self) -> pd.DataFrame:
         """Load both datasets and create merged dataset with complete paired observations."""
@@ -124,6 +139,10 @@ class BCAlbedoCorrelationAnalyzer:
         
         return filtered_data
     
+    # ========================================================================
+    # STATISTICAL ANALYSIS METHODS
+    # ========================================================================
+    
     def calculate_correlations(self, data: pd.DataFrame) -> Dict[str, Any]:
         """Calculate comprehensive correlation statistics for all five variables."""
         logger.info("Calculating comprehensive correlation statistics...")
@@ -174,71 +193,6 @@ class BCAlbedoCorrelationAnalyzer:
         rain_albedo_ci = self._correlation_confidence_interval(rain_albedo_pearson_r, n)
         bc_temp_ci = self._correlation_confidence_interval(bc_temp_pearson_r, n)
         
-        # Calculate multiple regression: Albedo ~ BC AOD + Temperature + Total Precip + Snowfall using numpy
-        # Prepare design matrix (add intercept column)
-        X = np.column_stack([
-            np.ones(n), 
-            clean_data['bc_aod_regional'], 
-            clean_data['temperature_c'],
-            clean_data['total_precip_mm'],
-            clean_data['snowfall_mm']
-        ])
-        y = clean_data['albedo_mean'].values
-        
-        # Fit multiple regression using normal equation: beta = (X'X)^(-1)X'y
-        try:
-            beta = np.linalg.solve(X.T @ X, X.T @ y)
-            y_pred = X @ beta
-            
-            # Calculate R-squared
-            ss_res = np.sum((y - y_pred) ** 2)
-            ss_tot = np.sum((y - np.mean(y)) ** 2)
-            multiple_r_squared = 1 - (ss_res / ss_tot)
-            
-            # Calculate adjusted R-squared
-            k = X.shape[1] - 1  # Number of predictors (excluding intercept)
-            adjusted_r_squared = 1 - (1 - multiple_r_squared) * (n - 1) / (n - k - 1)
-            
-            # Calculate F-statistic for multiple regression
-            mse_reg = (ss_tot - ss_res) / k
-            mse_res = ss_res / (n - k - 1)
-            f_statistic = mse_reg / mse_res
-            
-            intercept = beta[0]
-            bc_aod_coef = beta[1]
-            temp_coef = beta[2]
-            total_precip_coef = beta[3]
-            snowfall_coef = beta[4]
-            
-            # Calculate standardized coefficients (beta coefficients)
-            # Standardize variables: z = (x - mean) / std
-            bc_aod_std = clean_data['bc_aod_regional'].std()
-            temp_std = clean_data['temperature_c'].std()
-            total_precip_std = clean_data['total_precip_mm'].std()
-            snowfall_std = clean_data['snowfall_mm'].std()
-            albedo_std = clean_data['albedo_mean'].std()
-            
-            # Standardized coefficients (beta) = unstandardized_coef * (std_x / std_y)
-            bc_aod_beta = bc_aod_coef * (bc_aod_std / albedo_std)
-            temp_beta = temp_coef * (temp_std / albedo_std)
-            total_precip_beta = total_precip_coef * (total_precip_std / albedo_std)
-            snowfall_beta = snowfall_coef * (snowfall_std / albedo_std)
-            
-        except np.linalg.LinAlgError:
-            # Fallback if matrix is singular
-            multiple_r_squared = np.nan
-            adjusted_r_squared = np.nan
-            f_statistic = np.nan
-            intercept = np.nan
-            bc_aod_coef = np.nan
-            temp_coef = np.nan
-            total_precip_coef = np.nan
-            snowfall_coef = np.nan
-            bc_aod_beta = np.nan
-            temp_beta = np.nan
-            total_precip_beta = np.nan
-            snowfall_beta = np.nan
-            y_pred = np.full_like(y, np.mean(y))
         
         stats_dict = {
             'sample_size': n,
@@ -297,22 +251,6 @@ class BCAlbedoCorrelationAnalyzer:
             'bc_temp_spearman_p': bc_temp_spearman_p,
             'bc_temp_r_squared': bc_temp_r_squared,
             
-            # Multiple regression results (4-predictor model)
-            'multiple_r_squared': multiple_r_squared,
-            'adjusted_r_squared': adjusted_r_squared,
-            'f_statistic': f_statistic,
-            'bc_aod_coefficient': bc_aod_coef,
-            'temperature_coefficient': temp_coef,
-            'total_precip_coefficient': total_precip_coef,
-            'snowfall_coefficient': snowfall_coef,
-            'intercept': intercept,
-            
-            # Standardized coefficients (beta coefficients)
-            'bc_aod_beta_standardized': bc_aod_beta,
-            'temperature_beta_standardized': temp_beta,
-            'total_precip_beta_standardized': total_precip_beta,
-            'snowfall_beta_standardized': snowfall_beta,
-            
             # Variable statistics
             'bc_aod_mean': clean_data['bc_aod_regional'].mean(),
             'bc_aod_std': clean_data['bc_aod_regional'].std(),
@@ -342,7 +280,6 @@ class BCAlbedoCorrelationAnalyzer:
         logger.info(f"Total Precip vs Albedo: Pearson r = {total_precip_albedo_pearson_r:.4f} (p = {total_precip_albedo_pearson_p:.4f})")
         logger.info(f"Snowfall vs Albedo: Pearson r = {snow_albedo_pearson_r:.4f} (p = {snow_albedo_pearson_p:.4f})")
         logger.info(f"Rainfall vs Albedo: Pearson r = {rain_albedo_pearson_r:.4f} (p = {rain_albedo_pearson_p:.4f})")
-        logger.info(f"Multiple regression (4-predictors) R² = {multiple_r_squared:.4f}, Adjusted R² = {adjusted_r_squared:.4f}")
         
         return stats_dict
     
@@ -362,6 +299,10 @@ class BCAlbedoCorrelationAnalyzer:
         r_upper = np.tanh(z_upper)
         
         return (r_lower, r_upper)
+    
+    # ========================================================================
+    # VISUALIZATION METHODS
+    # ========================================================================
     
     def create_scatter_plot(self, data: pd.DataFrame, stats: Dict[str, Any]) -> None:
         """Create scatter plot with regression line and temperature coloring."""
@@ -393,7 +334,7 @@ class BCAlbedoCorrelationAnalyzer:
         
         # Add statistics text
         stats_text = f'BC AOD-Albedo: r = {stats["bc_albedo_pearson_r"]:.4f} (p = {stats["bc_albedo_pearson_p"]:.4f})\n'
-        stats_text += f'Multiple R² = {stats["multiple_r_squared"]:.4f}\n'
+        stats_text += f'R² = {stats["bc_albedo_r_squared"]:.4f}\n'
         stats_text += f'n = {stats["sample_size"]}'
         ax.text(0.05, 0.95, stats_text, transform=ax.transAxes, 
                verticalalignment='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
@@ -541,7 +482,7 @@ class BCAlbedoCorrelationAnalyzer:
         
         ax4.set_xlabel('Observed Albedo', fontsize=11)
         ax4.set_ylabel('Predicted Albedo\n(BC AOD + Temperature)', fontsize=11)
-        ax4.set_title(f'Multiple Regression Model\nR² = {stats["multiple_r_squared"]:.3f}, Adj R² = {stats["adjusted_r_squared"]:.3f}', fontsize=12)
+        ax4.set_title(f'BC AOD-Albedo Model\nR² = {stats["bc_albedo_r_squared"]:.3f}', fontsize=12)
         ax4.grid(True, alpha=0.3)
         ax4.legend()
         
@@ -607,139 +548,16 @@ class BCAlbedoCorrelationAnalyzer:
         
         logger.info("Time series plot saved")
     
-    def create_comprehensive_scatter_grid(self, data: pd.DataFrame, stats: Dict[str, Any]) -> None:
-        """Create comprehensive 6-panel scatter plot grid showing all variable relationships."""
-        logger.info("Creating comprehensive 6-panel scatter plot grid...")
-        
-        fig, axes = plt.subplots(2, 3, figsize=(20, 12))
-        fig.suptitle('Comprehensive Variable Relationships: BC AOD, Temperature, Precipitation, and Albedo\nHaig Glacier (June-September 2022-2024)', 
-                    fontsize=16, fontweight='bold')
-        
-        # Panel 1: BC AOD vs Albedo (colored by temperature)
-        ax1 = axes[0, 0]
-        scatter1 = ax1.scatter(data['bc_aod_regional'], data['albedo_mean'], 
-                              c=data['temperature_c'], s=50, alpha=0.7, 
-                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
-        z1 = np.polyfit(data['bc_aod_regional'], data['albedo_mean'], 1)
-        p1 = np.poly1d(z1)
-        x_reg1 = np.linspace(data['bc_aod_regional'].min(), data['bc_aod_regional'].max(), 100)
-        ax1.plot(x_reg1, p1(x_reg1), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
-        ax1.set_xlabel('BC AOD (Regional)', fontsize=11)
-        ax1.set_ylabel('MODIS Albedo', fontsize=11)
-        ax1.set_title(f'BC AOD vs Albedo\nr = {stats["bc_albedo_pearson_r"]:.3f}, p = {stats["bc_albedo_pearson_p"]:.4f}', fontsize=12)
-        ax1.grid(True, alpha=0.3)
-        
-        # Panel 2: Temperature vs Albedo (colored by temperature)
-        ax2 = axes[0, 1]
-        scatter2 = ax2.scatter(data['temperature_c'], data['albedo_mean'], 
-                              c=data['temperature_c'], s=50, alpha=0.7, 
-                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
-        z2 = np.polyfit(data['temperature_c'], data['albedo_mean'], 1)
-        p2 = np.poly1d(z2)
-        x_reg2 = np.linspace(data['temperature_c'].min(), data['temperature_c'].max(), 100)
-        ax2.plot(x_reg2, p2(x_reg2), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
-        ax2.set_xlabel('Air Temperature (°C)', fontsize=11)
-        ax2.set_ylabel('MODIS Albedo', fontsize=11)
-        ax2.set_title(f'Temperature vs Albedo\nr = {stats["temp_albedo_pearson_r"]:.3f}, p = {stats["temp_albedo_pearson_p"]:.4f}', fontsize=12)
-        ax2.grid(True, alpha=0.3)
-        
-        # Panel 3: Total Precipitation vs Albedo (colored by temperature)
-        ax3 = axes[0, 2]
-        scatter3 = ax3.scatter(data['total_precip_mm'], data['albedo_mean'], 
-                              c=data['temperature_c'], s=50, alpha=0.7, 
-                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
-        z3 = np.polyfit(data['total_precip_mm'], data['albedo_mean'], 1)
-        p3 = np.poly1d(z3)
-        x_reg3 = np.linspace(data['total_precip_mm'].min(), data['total_precip_mm'].max(), 100)
-        ax3.plot(x_reg3, p3(x_reg3), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
-        ax3.set_xlabel('Total Precipitation (mm)', fontsize=11)
-        ax3.set_ylabel('MODIS Albedo', fontsize=11)
-        ax3.set_title(f'Total Precip vs Albedo\nr = {stats["total_precip_albedo_pearson_r"]:.3f}, p = {stats["total_precip_albedo_pearson_p"]:.4f}', fontsize=12)
-        ax3.grid(True, alpha=0.3)
-        
-        # Panel 4: Snowfall vs Albedo (colored by temperature)
-        ax4 = axes[1, 0]
-        scatter4 = ax4.scatter(data['snowfall_mm'], data['albedo_mean'], 
-                              c=data['temperature_c'], s=50, alpha=0.7, 
-                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
-        z4 = np.polyfit(data['snowfall_mm'], data['albedo_mean'], 1)
-        p4 = np.poly1d(z4)
-        x_reg4 = np.linspace(data['snowfall_mm'].min(), data['snowfall_mm'].max(), 100)
-        ax4.plot(x_reg4, p4(x_reg4), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
-        ax4.set_xlabel('Snowfall (mm)', fontsize=11)
-        ax4.set_ylabel('MODIS Albedo', fontsize=11)
-        ax4.set_title(f'Snowfall vs Albedo\nr = {stats["snow_albedo_pearson_r"]:.3f}, p = {stats["snow_albedo_pearson_p"]:.4f}', fontsize=12)
-        ax4.grid(True, alpha=0.3)
-        
-        # Panel 5: Rainfall vs Albedo (colored by temperature)
-        ax5 = axes[1, 1]
-        scatter5 = ax5.scatter(data['rainfall_mm'], data['albedo_mean'], 
-                              c=data['temperature_c'], s=50, alpha=0.7, 
-                              cmap='coolwarm', edgecolors='black', linewidth=0.3)
-        z5 = np.polyfit(data['rainfall_mm'], data['albedo_mean'], 1)
-        p5 = np.poly1d(z5)
-        x_reg5 = np.linspace(data['rainfall_mm'].min(), data['rainfall_mm'].max(), 100)
-        ax5.plot(x_reg5, p5(x_reg5), "darkblue", linestyle='--', alpha=0.8, linewidth=2)
-        ax5.set_xlabel('Rainfall (mm)', fontsize=11)
-        ax5.set_ylabel('MODIS Albedo', fontsize=11)
-        ax5.set_title(f'Rainfall vs Albedo\nr = {stats["rain_albedo_pearson_r"]:.3f}, p = {stats["rain_albedo_pearson_p"]:.4f}', fontsize=12)
-        ax5.grid(True, alpha=0.3)
-        
-        # Panel 6: Multiple Regression Model Fit (observed vs predicted)
-        ax6 = axes[1, 2]
-        # Calculate predicted values from multiple regression
-        n = len(data)
-        X = np.column_stack([
-            np.ones(n), 
-            data['bc_aod_regional'], 
-            data['temperature_c'],
-            data['total_precip_mm'],
-            data['snowfall_mm']
-        ])
-        y = data['albedo_mean'].values
-        try:
-            beta = np.linalg.solve(X.T @ X, X.T @ y)
-            y_pred = X @ beta
-            
-            scatter6 = ax6.scatter(data['albedo_mean'], y_pred, 
-                                  c=data['temperature_c'], s=50, alpha=0.7, 
-                                  cmap='coolwarm', edgecolors='black', linewidth=0.3)
-            
-            # Add 1:1 line
-            min_val = min(data['albedo_mean'].min(), y_pred.min())
-            max_val = max(data['albedo_mean'].max(), y_pred.max())
-            ax6.plot([min_val, max_val], [min_val, max_val], 'k--', alpha=0.8, linewidth=2, label='1:1 Line')
-            
-            ax6.set_xlabel('Observed Albedo', fontsize=11)
-            ax6.set_ylabel('Predicted Albedo\n(4-predictor Model)', fontsize=11)
-            ax6.set_title(f'Multiple Regression Model\nR² = {stats["multiple_r_squared"]:.3f}, Adj R² = {stats["adjusted_r_squared"]:.3f}', fontsize=12)
-            ax6.legend(loc='upper left', fontsize=9)
-        except:
-            ax6.text(0.5, 0.5, 'Model fit\nnot available', ha='center', va='center', transform=ax6.transAxes)
-            ax6.set_title('Multiple Regression Model', fontsize=12)
-        
-        ax6.grid(True, alpha=0.3)
-        
-        # Add colorbar for temperature (shared across all plots) - positioned to avoid overlap
-        cbar = fig.colorbar(scatter1, ax=axes, shrink=0.8, pad=0.05, aspect=30)
-        cbar.set_label('Air Temperature (°C)', fontsize=12)
-        
-        plt.tight_layout()
-        plt.subplots_adjust(right=0.92)  # Make room for colorbar
-        plt.savefig(self.output_dir / "plots" / "comprehensive_scatter_grid.png", dpi=300, bbox_inches='tight')
-        plt.close()
-        
-        logger.info("Comprehensive scatter grid saved")
     
     def create_yearly_time_series_plots(self, data: pd.DataFrame) -> None:
-        """Create 3-panel yearly time series plots with BC AOD, Albedo, and Temperature."""
-        logger.info("Creating yearly time series plots with temperature...")
+        """Create 3-panel yearly time series plots with BC AOD and Albedo."""
+        logger.info("Creating yearly time series plots...")
         
         # Sort data by date to ensure proper line plotting
         data_sorted = data.sort_values('date').reset_index(drop=True)
         
         fig, axes = plt.subplots(3, 1, figsize=(16, 14))
-        fig.suptitle('Yearly Time Series: Black Carbon AOD, Surface Albedo, and Temperature\nHaig Glacier (June-September)', 
+        fig.suptitle('Yearly Time Series: Black Carbon AOD and Surface Albedo\nHaig Glacier (June-September)', 
                     fontsize=16, fontweight='bold', y=0.98)
         
         years = [2022, 2023, 2024]
@@ -773,37 +591,23 @@ class BCAlbedoCorrelationAnalyzer:
                                label=f'Albedo {year}')
                 ax2.tick_params(axis='y', labelcolor=color_albedo)
                 
-                # Create third y-axis for temperature
-                ax3 = ax1.twinx()
-                # Offset the third axis
-                ax3.spines['right'].set_position(('outward', 60))
-                color_temp = colors_temp[i]
-                ax3.set_ylabel('Air Temperature (°C)', color=color_temp, fontsize=11)
-                line3 = ax3.plot(year_data['date'], year_data['temperature_c'], 
-                               color=color_temp, linewidth=2, alpha=0.8, linestyle=':', 
-                               label=f'Temperature {year}')
-                ax3.tick_params(axis='y', labelcolor=color_temp)
                 
                 # Set title for each subplot with correlations
                 bc_albedo_r = np.nan
-                temp_albedo_r = np.nan
-                bc_temp_r = np.nan
                 
                 if len(year_data) > 3:  # Need at least 4 points for correlation
                     try:
                         bc_albedo_r, bc_albedo_p = pearsonr(year_data['bc_aod_regional'], year_data['albedo_mean'])
-                        temp_albedo_r, temp_albedo_p = pearsonr(year_data['temperature_c'], year_data['albedo_mean'])
-                        bc_temp_r, bc_temp_p = pearsonr(year_data['bc_aod_regional'], year_data['temperature_c'])
                     except:
                         pass
                 
                 title_text = f'{year} (n = {len(year_data)} observations)\n'
-                title_text += f'BC-Albedo: r = {bc_albedo_r:.3f} | Temp-Albedo: r = {temp_albedo_r:.3f} | BC-Temp: r = {bc_temp_r:.3f}'
+                title_text += f'BC-Albedo correlation: r = {bc_albedo_r:.3f}'
                 ax1.set_title(title_text, fontsize=11, pad=15)
                 
-                # Enhanced legend with all three variables
-                lines = line1 + line2 + line3
-                labels = [f'BC AOD {year}', f'Albedo {year}', f'Temperature {year}']
+                # Enhanced legend with both variables
+                lines = line1 + line2
+                labels = [f'BC AOD {year}', f'Albedo {year}']
                 ax1.legend(lines, labels, loc='upper left', fontsize=9, 
                           bbox_to_anchor=(0.02, 0.98))
                 
@@ -814,8 +618,7 @@ class BCAlbedoCorrelationAnalyzer:
                 if len(year_data) > 3:
                     stats_text = f'Variable means:\n'
                     stats_text += f'BC AOD: {year_data["bc_aod_regional"].mean():.4f}\n'
-                    stats_text += f'Albedo: {year_data["albedo_mean"].mean():.3f}\n'
-                    stats_text += f'Temp: {year_data["temperature_c"].mean():.1f}°C'
+                    stats_text += f'Albedo: {year_data["albedo_mean"].mean():.3f}'
                     
                     ax1.text(0.98, 0.02, stats_text, transform=ax1.transAxes, 
                            verticalalignment='bottom', horizontalalignment='right', fontsize=9,
@@ -832,11 +635,11 @@ class BCAlbedoCorrelationAnalyzer:
         
         plt.tight_layout()
         plt.subplots_adjust(top=0.94)  # Make room for main title
-        plt.savefig(self.output_dir / "plots" / "bc_aod_albedo_temp_yearly_timeseries.png", 
+        plt.savefig(self.output_dir / "plots" / "bc_aod_albedo_yearly_timeseries.png", 
                    dpi=300, bbox_inches='tight')
         plt.close()
         
-        logger.info("Enhanced yearly time series plots with temperature saved")
+        logger.info("BC AOD vs Albedo yearly time series plots saved")
     
     def create_seasonal_analysis(self, data: pd.DataFrame) -> Dict[str, Dict[str, Any]]:
         """Perform seasonal correlation analysis."""
@@ -967,6 +770,10 @@ class BCAlbedoCorrelationAnalyzer:
         
         logger.info("Residual analysis completed")
     
+    # ========================================================================
+    # RESULTS SAVING METHODS
+    # ========================================================================
+    
     def save_results(self, data: pd.DataFrame, stats: Dict[str, Any], seasonal_stats: Dict[str, Dict[str, Any]]) -> None:
         """Save analysis results to CSV files."""
         logger.info("Saving results...")
@@ -1064,6 +871,10 @@ class BCAlbedoCorrelationAnalyzer:
         
         logger.info("Comparison analysis completed")
     
+    # ========================================================================
+    # MAIN ANALYSIS WORKFLOW
+    # ========================================================================
+    
     def run_complete_analysis(self) -> None:
         """Run the complete correlation analysis using original data only."""
         logger.info("Starting complete BC AOD vs Albedo correlation analysis...")
@@ -1076,7 +887,6 @@ class BCAlbedoCorrelationAnalyzer:
         
         # Create visualizations
         self.create_scatter_plot(data, stats)  # Enhanced with temperature coloring
-        self.create_comprehensive_scatter_grid(data, stats)  # New: comprehensive 6-panel scatter grid
         self.create_correlation_matrix_heatmap(data, stats)  # Updated: 6x6 correlation matrix
         self.create_yearly_time_series_plots(data)
         seasonal_stats = self.create_seasonal_analysis(data)
@@ -1086,8 +896,8 @@ class BCAlbedoCorrelationAnalyzer:
         self.save_results(data, stats, seasonal_stats)
         
         logger.info(f"Analysis complete! Results saved to: {self.output_dir}")
-        print(f"\nEnhanced 5-Variable Correlation Analysis Results:")
-        print(f"================================================")
+        print(f"\nEnhanced Multi-Variable Correlation Analysis Results:")
+        print(f"====================================================")
         print(f"Sample size: {stats['sample_size']} paired observations with BC AOD, Temperature, Precipitation (3 vars), and Albedo")
         print(f"\nPairwise Correlations with Albedo:")
         print(f"- BC AOD vs Albedo:         r = {stats['bc_albedo_pearson_r']:.4f} (p = {stats['bc_albedo_pearson_p']:.4f})")
@@ -1095,20 +905,6 @@ class BCAlbedoCorrelationAnalyzer:
         print(f"- Total Precip vs Albedo:   r = {stats['total_precip_albedo_pearson_r']:.4f} (p = {stats['total_precip_albedo_pearson_p']:.4f})")
         print(f"- Snowfall vs Albedo:       r = {stats['snow_albedo_pearson_r']:.4f} (p = {stats['snow_albedo_pearson_p']:.4f})")
         print(f"- Rainfall vs Albedo:       r = {stats['rain_albedo_pearson_r']:.4f} (p = {stats['rain_albedo_pearson_p']:.4f})")
-        print(f"\nMultiple Regression Model (Albedo ~ BC AOD + Temperature + Total Precip + Snowfall):")
-        print(f"- Multiple R²: {stats['multiple_r_squared']:.4f}")
-        print(f"- Adjusted R²: {stats['adjusted_r_squared']:.4f}")
-        print(f"- F-statistic: {stats['f_statistic']:.2f}")
-        print(f"\nUnstandardized Coefficients:")
-        print(f"- BC AOD coefficient:       {stats['bc_aod_coefficient']:.4f}")
-        print(f"- Temperature coefficient:  {stats['temperature_coefficient']:.4f}")
-        print(f"- Total Precip coefficient: {stats['total_precip_coefficient']:.4f}")
-        print(f"- Snowfall coefficient:     {stats['snowfall_coefficient']:.4f}")
-        print(f"\nStandardized Coefficients (Beta):")
-        print(f"- BC AOD beta:         {stats['bc_aod_beta_standardized']:.4f}")
-        print(f"- Temperature beta:    {stats['temperature_beta_standardized']:.4f}")
-        print(f"- Total Precip beta:   {stats['total_precip_beta_standardized']:.4f}")
-        print(f"- Snowfall beta:       {stats['snowfall_beta_standardized']:.4f}")
         print(f"\nVariable Statistics:")
         print(f"- BC AOD: {stats['bc_aod_mean']:.4f} ± {stats['bc_aod_std']:.4f}")
         print(f"- Temperature: {stats['temperature_mean']:.1f}°C ± {stats['temperature_std']:.1f}°C")
@@ -1118,6 +914,10 @@ class BCAlbedoCorrelationAnalyzer:
         print(f"- Albedo: {stats['albedo_mean']:.4f} ± {stats['albedo_std']:.4f}")
         print(f"\nResults saved to: {self.output_dir}")
 
+
+# ============================================================================
+# MAIN EXECUTION
+# ============================================================================
 
 def main():
     """Main function to run the analysis."""
