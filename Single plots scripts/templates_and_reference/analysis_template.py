@@ -1,38 +1,43 @@
 #!/usr/bin/env python3
 """
-Method Performance Bar Chart Generator
+[ANALYSIS NAME] Generator
 
-This standalone script creates the exact 3×4 method performance comparison
-showing Correlation, RMSE, Bias, and MAE metrics across glaciers and MODIS methods.
-It includes the complete data pipeline from raw CSV files to publication-ready bar charts.
+[DETAILED DESCRIPTION OF WHAT THIS ANALYSIS DOES]
+[EXPLAIN THE PURPOSE AND SCIENTIFIC CONTEXT]
 
 Features:
-- 3×4 bar chart matrix (3 glaciers × 4 metrics)
-- Method-specific color coding with best performance highlighting
-- Gold star indicators for best performing methods
-- Comprehensive statistical analysis (R, RMSE, MAE, Bias)
-- Support for all 3 glaciers: Athabasca, Haig, Coropuna
+- [FEATURE 1 - e.g., "3×3 correlation matrix across glaciers and methods"]
+- [FEATURE 2 - e.g., "Statistical significance testing with p-values"]
+- [FEATURE 3 - e.g., "Automated outlier detection and filtering"]
+- [FEATURE 4 - e.g., "Publication-ready visualizations with error bars"]
+- [FEATURE 5 - e.g., "Comprehensive summary statistics and documentation"]
 
-Author: Analysis System
-Date: 2025-08-02
+Author: [YOUR NAME]
+Date: [CURRENT DATE]
 """
 
 # ============================================================================
 # IMPORTS
 # ============================================================================
 
+# Standard library imports
 import logging
+from datetime import datetime
 from pathlib import Path
 
+# Scientific computing and data manipulation
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import warnings
 
+# Statistical analysis
 from scipy import stats
 
+# Type hints for better code documentation
 from typing import Any, Dict, List, Optional, Tuple
 
+# Local utilities
 from output_manager import OutputManager
 
 # ============================================================================
@@ -46,7 +51,9 @@ logger = logging.getLogger(__name__)
 # ============================================================================
 # CONFIGURATION
 # ============================================================================
+
 CONFIG = {
+    # Data file paths for all three glaciers
     'data_paths': {
         'athabasca': {
             'modis': "D:/Documents/Projects/athabasca_analysis/data/csv/Athabasca_Terra_Aqua_MultiProduct_2014-01-01_to_2021-01-01.csv",
@@ -61,53 +68,68 @@ CONFIG = {
             'aws': "D:/Documents/Projects/Coropuna_glacier/data/csv/COROPUNA_simple.csv"
         }
     },
+    
+    # AWS station coordinates for distance calculations
     'aws_stations': {
         'athabasca': {'lat': 52.1949, 'lon': -117.2431, 'name': 'Athabasca AWS'},
         'haig': {'lat': 50.7186, 'lon': -115.3433, 'name': 'Haig AWS'},
         'coropuna': {'lat': -15.5181, 'lon': -72.6617, 'name': 'Coropuna AWS'}
     },
+    
+    # Color schemes for consistent visualization
     'colors': {
-        'athabasca': '#1f77b4',  # Blue
-        'haig': '#ff7f0e',       # Orange  
-        'coropuna': '#2ca02c',   # Green
-        'MOD09GA': '#9467bd',    # Purple (Terra)
-        'MYD09GA': '#17becf',    # Cyan (Aqua)
-        'MCD43A3': '#d62728',    # Red
-        'MOD10A1': '#8c564b',    # Brown (Terra)
-        'MYD10A1': '#e377c2',    # Pink (Aqua)
-        'mcd43a3': '#d62728',    # Red
-        'mod09ga': '#9467bd',    # Purple (Terra)
-        'myd09ga': '#17becf',    # Cyan (Aqua)
-        'mod10a1': '#8c564b',    # Brown (Terra)
-        'myd10a1': '#e377c2'     # Pink (Aqua)
+        # Glacier-specific colors
+        'athabasca': '#1f77b4',    # Blue
+        'haig': '#ff7f0e',         # Orange  
+        'coropuna': '#2ca02c',     # Green
+        
+        # Method-specific colors
+        'MOD09GA': '#9467bd',      # Purple (Terra)
+        'MYD09GA': '#17becf',      # Cyan (Aqua)
+        'MCD43A3': '#d62728',      # Red
+        'MOD10A1': '#8c564b',      # Brown (Terra)
+        'MYD10A1': '#e377c2',      # Pink (Aqua)
+        
+        # AWS reference
+        'AWS': '#000000'           # Black
     },
-    'methods': ['MOD09GA', 'MCD43A3', 'MOD10A1'],
+    
+    # MODIS methods to analyze
+    'methods': ['MCD43A3', 'MOD09GA', 'MOD10A1'],
+    
+    # Method name standardization mapping
     'method_mapping': {
-        # Map different case variations to standard format
-        'mcd43a3': 'MCD43A3',
-        'MCD43A3': 'MCD43A3',
-        'mod09ga': 'MOD09GA', 
-        'MOD09GA': 'MOD09GA',
-        'mod10a1': 'MOD10A1',
-        'MOD10A1': 'MOD10A1'
+        'mcd43a3': 'MCD43A3', 'MCD43A3': 'MCD43A3',
+        'mod09ga': 'MOD09GA', 'MOD09GA': 'MOD09GA',
+        'myd09ga': 'MOD09GA', 'MYD09GA': 'MOD09GA',  # Aqua grouped with Terra
+        'mod10a1': 'MOD10A1', 'MOD10A1': 'MOD10A1',
+        'myd10a1': 'MOD10A1', 'MYD10A1': 'MOD10A1'   # Aqua grouped with Terra
     },
-    'outlier_threshold': 2.5,
+    
+    # Analysis parameters
+    'outlier_threshold': 2.5,  # Standard deviations for outlier filtering
+    
+    # Quality control filters
     'quality_filters': {
-        'min_glacier_fraction': 0.1,
-        'min_observations': 10
+        'min_glacier_fraction': 0.1,   # Minimum glacier coverage in pixel
+        'min_observations': 10         # Minimum number of valid observations
     },
+    
+    # Visualization settings
     'visualization': {
-        'figsize': (16, 12),
-        'dpi': 300,
-        'style': 'seaborn-v0_8'
+        'figsize': (12, 10),          # Figure size (width, height)
+        'dpi': 300,                   # Resolution for saved plots
+        'style': 'seaborn-v0_8'       # Matplotlib style
     },
+    
+    # Output configuration
     'output': {
-        'analysis_name': 'method_performance',
+        'analysis_name': '[ANALYSIS_NAME_LOWERCASE]',  # e.g., 'correlation_analysis'
         'base_dir': 'outputs',
-        'plot_filename': 'method_performance_bar_chart.png',
+        'plot_filename': '[PLOT_FILENAME].png',        # e.g., 'correlation_matrix.png'
         'summary_template': {
-            'analysis_type': 'MODIS Method Performance Comparison',
-            'description': 'Bar chart comparison of correlation, RMSE, bias, and MAE metrics across glaciers and MODIS methods'
+            'analysis_type': '[ANALYSIS TYPE TITLE]',  # e.g., 'Correlation Analysis'
+            'description': '[DETAILED DESCRIPTION OF ANALYSIS PURPOSE AND METHODOLOGY]'
         }
     }
 }
@@ -120,10 +142,29 @@ class DataLoader:
     """Handles loading and preprocessing of MODIS and AWS data for all glaciers."""
     
     def __init__(self, config: Dict[str, Any]):
+        """Initialize DataLoader with configuration.
+        
+        Args:
+            config: Configuration dictionary containing data paths and settings
+        """
         self.config = config
         
     def load_glacier_data(self, glacier_id: str) -> Tuple[pd.DataFrame, pd.DataFrame]:
-        """Load MODIS and AWS data for a specific glacier."""
+        """Load and preprocess MODIS and AWS data for a specific glacier.
+        
+        Args:
+            glacier_id: Identifier for glacier ('athabasca', 'haig', 'coropuna')
+            
+        Returns:
+            Tuple of (modis_data, aws_data) as pandas DataFrames
+            
+        Raises:
+            ValueError: If glacier_id is not recognized
+            FileNotFoundError: If data files cannot be found
+        """
+        if glacier_id not in self.config['data_paths']:
+            raise ValueError(f"Unknown glacier ID: {glacier_id}")
+        
         logger.info(f"Loading data for {glacier_id} glacier...")
         
         paths = self.config['data_paths'][glacier_id]
@@ -139,7 +180,15 @@ class DataLoader:
         return modis_data, aws_data
     
     def _load_modis_data(self, file_path: str, glacier_id: str) -> pd.DataFrame:
-        """Load MODIS data with glacier-specific parsing."""
+        """Load MODIS data with glacier-specific parsing.
+        
+        Args:
+            file_path: Path to MODIS CSV file
+            glacier_id: Glacier identifier for custom processing
+            
+        Returns:
+            Processed MODIS data in long format
+        """
         if not Path(file_path).exists():
             raise FileNotFoundError(f"MODIS data file not found: {file_path}")
         
@@ -170,7 +219,15 @@ class DataLoader:
         return data
     
     def _convert_to_long_format(self, data: pd.DataFrame, glacier_id: str) -> pd.DataFrame:
-        """Convert wide format MODIS data to long format."""
+        """Convert wide format MODIS data to long format.
+        
+        Args:
+            data: Wide format MODIS data
+            glacier_id: Glacier identifier
+            
+        Returns:
+            Long format data with method column
+        """
         long_format_rows = []
         
         # Define method mappings based on available columns
@@ -179,15 +236,16 @@ class DataLoader:
             if 'MOD09GA' in col and 'albedo' in col:
                 method_columns['MOD09GA'] = col
             elif 'MYD09GA' in col and 'albedo' in col:
-                method_columns['MYD09GA'] = col
+                method_columns['MOD09GA'] = col  # Group Aqua with Terra
             elif 'MOD10A1' in col and 'albedo' in col:
                 method_columns['MOD10A1'] = col
             elif 'MYD10A1' in col and 'albedo' in col:
-                method_columns['MYD10A1'] = col
+                method_columns['MOD10A1'] = col  # Group Aqua with Terra
             elif 'MCD43A3' in col and 'albedo' in col:
                 method_columns['MCD43A3'] = col
             elif col in ['MOD09GA', 'MYD09GA', 'MOD10A1', 'MYD10A1', 'MCD43A3']:
-                method_columns[col] = col
+                standard_method = self.config['method_mapping'].get(col, col)
+                method_columns[standard_method] = col
         
         for method, col_name in method_columns.items():
             if col_name not in data.columns:
@@ -220,7 +278,15 @@ class DataLoader:
             return pd.DataFrame()
     
     def _load_aws_data(self, file_path: str, glacier_id: str) -> pd.DataFrame:
-        """Load AWS data with glacier-specific parsing."""
+        """Load AWS data with glacier-specific parsing.
+        
+        Args:
+            file_path: Path to AWS CSV file
+            glacier_id: Glacier identifier for custom processing
+            
+        Returns:
+            Processed AWS data with date and Albedo columns
+        """
         if not Path(file_path).exists():
             raise FileNotFoundError(f"AWS data file not found: {file_path}")
         
@@ -275,10 +341,23 @@ class PixelSelector:
     """Implements intelligent pixel selection based on distance to AWS stations."""
     
     def __init__(self, config: Dict[str, Any]):
+        """Initialize PixelSelector with configuration.
+        
+        Args:
+            config: Configuration dictionary containing AWS stations and filters
+        """
         self.config = config
         
     def select_best_pixels(self, modis_data: pd.DataFrame, glacier_id: str) -> pd.DataFrame:
-        """Select best pixels for analysis based on AWS distance and glacier fraction."""
+        """Select best pixels for analysis based on AWS distance and glacier fraction.
+        
+        Args:
+            modis_data: MODIS data with pixel information
+            glacier_id: Glacier identifier
+            
+        Returns:
+            Filtered MODIS data with selected pixels only
+        """
         logger.info(f"Applying pixel selection for {glacier_id}...")
         
         # Get AWS station coordinates
@@ -311,18 +390,20 @@ class PixelSelector:
             quality_pixels['latitude'], quality_pixels['longitude'], aws_lat, aws_lon
         )
         
-        # For Athabasca (small dataset), use all pixels
+        # Pixel selection strategy (customize based on analysis needs)
         if glacier_id == 'athabasca':
+            # For Athabasca (small dataset), use all quality pixels
             selected_pixel_ids = quality_pixels['pixel_id'].tolist()
-            logger.info(f"Using all {len(selected_pixel_ids)} pixels for {glacier_id} (small dataset)")
+            logger.info(f"Using all {len(selected_pixel_ids)} quality pixels for {glacier_id}")
         else:
             # Sort by glacier fraction (descending) then distance (ascending)
             quality_pixels = quality_pixels.sort_values([
                 'avg_glacier_fraction', 'distance_to_aws'
             ], ascending=[False, True])
             
-            # Select the best performing pixel
-            selected_pixels = quality_pixels.head(1)
+            # Select the best performing pixel(s) - customize number as needed
+            num_pixels_to_select = 1  # Modify based on analysis requirements
+            selected_pixels = quality_pixels.head(num_pixels_to_select)
             selected_pixel_ids = selected_pixels['pixel_id'].tolist()
             
             logger.info(f"Selected {len(selected_pixel_ids)} best pixel(s) for {glacier_id}")
@@ -339,7 +420,15 @@ class PixelSelector:
         return filtered_data
     
     def _haversine_distance(self, lat1, lon1, lat2, lon2):
-        """Calculate distance using Haversine formula."""
+        """Calculate distance using Haversine formula.
+        
+        Args:
+            lat1, lon1: First point coordinates (arrays or scalars)
+            lat2, lon2: Second point coordinates (scalars)
+            
+        Returns:
+            Distance in kilometers
+        """
         R = 6371  # Earth's radius in km
         lat1, lon1, lat2, lon2 = map(np.radians, [lat1, lon1, lat2, lon2])
         dlat = lat2 - lat1
@@ -356,11 +445,25 @@ class DataProcessor:
     """Handles AWS-MODIS data merging and statistical processing."""
     
     def __init__(self, config: Dict[str, Any]):
+        """Initialize DataProcessor with configuration.
+        
+        Args:
+            config: Configuration dictionary containing analysis parameters
+        """
         self.config = config
         
     def merge_and_process(self, modis_data: pd.DataFrame, aws_data: pd.DataFrame, 
                          glacier_id: str) -> pd.DataFrame:
-        """Merge AWS and MODIS data and calculate statistics for each method."""
+        """Merge AWS and MODIS data and calculate statistics for each method.
+        
+        Args:
+            modis_data: Processed MODIS data
+            aws_data: Processed AWS data
+            glacier_id: Glacier identifier
+            
+        Returns:
+            DataFrame with statistical results for each method
+        """
         logger.info(f"Merging and processing data for {glacier_id}...")
         
         results = []
@@ -380,7 +483,7 @@ class DataProcessor:
             # Merge with AWS data on date
             merged = method_data.merge(aws_data, on='date', how='inner')
             
-            if len(merged) < 3:  # Need minimum data points
+            if len(merged) < 3:  # Need minimum data points for statistics
                 logger.warning(f"Insufficient {method} data for {glacier_id}: {len(merged)} points")
                 continue
             
@@ -405,12 +508,20 @@ class DataProcessor:
             })
             
             logger.info(f"Processed {method} for {glacier_id}: "
-                       f"{len(aws_clean)} samples, r={stats['r']:.3f}")
+                       f"{len(aws_clean)} samples, r={stats['correlation']:.3f}")
         
         return pd.DataFrame(results)
     
     def _apply_outlier_filtering(self, aws_vals: np.ndarray, modis_vals: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-        """Apply 2.5σ outlier filtering to AWS-MODIS pairs."""
+        """Apply 2.5σ outlier filtering to AWS-MODIS pairs.
+        
+        Args:
+            aws_vals: AWS albedo values
+            modis_vals: MODIS albedo values
+            
+        Returns:
+            Tuple of filtered (aws_vals, modis_vals)
+        """
         if len(aws_vals) < 3:
             return aws_vals, modis_vals
         
@@ -426,10 +537,18 @@ class DataProcessor:
         return aws_vals[mask], modis_vals[mask]
     
     def _calculate_statistics(self, aws_vals: np.ndarray, modis_vals: np.ndarray) -> Dict[str, float]:
-        """Calculate comprehensive statistics between AWS and MODIS values."""
+        """Calculate comprehensive statistics between AWS and MODIS values.
+        
+        Args:
+            aws_vals: AWS albedo values
+            modis_vals: MODIS albedo values
+            
+        Returns:
+            Dictionary with statistical metrics
+        """
         if len(aws_vals) == 0:
             return {
-                'r': np.nan, 'correlation': np.nan, 'rmse': np.nan, 'mae': np.nan, 'bias': np.nan, 
+                'correlation': np.nan, 'rmse': np.nan, 'mae': np.nan, 'bias': np.nan, 
                 'n_samples': 0, 'p_value': 1.0
             }
         
@@ -450,7 +569,6 @@ class DataProcessor:
             p_value = 1.0
         
         return {
-            'r': correlation if not np.isnan(correlation) else 0.0,
             'correlation': correlation if not np.isnan(correlation) else 0.0,
             'rmse': rmse,
             'mae': mae,
@@ -463,16 +581,29 @@ class DataProcessor:
 # VISUALIZATION MODULE
 # ============================================================================
 
-class MethodPerformanceVisualizer:
-    """Creates the 3×4 method performance bar chart matrix."""
+class AnalysisVisualizer:
+    """Creates the main visualization for this analysis."""
     
     def __init__(self, config: Dict[str, Any]):
+        """Initialize visualizer with configuration.
+        
+        Args:
+            config: Configuration dictionary containing visualization settings
+        """
         self.config = config
         
-    def create_performance_matrix(self, processed_data: List[pd.DataFrame], 
-                                 output_path: Optional[str] = None) -> plt.Figure:
-        """Create the 3×4 method performance bar chart matrix."""
-        logger.info("Creating method performance bar chart matrix...")
+    def create_visualization(self, processed_data: List[pd.DataFrame], 
+                           output_path: Optional[str] = None) -> plt.Figure:
+        """Create the main visualization.
+        
+        Args:
+            processed_data: List of processed data for each glacier
+            output_path: Optional path to save the figure
+            
+        Returns:
+            matplotlib Figure object
+        """
+        logger.info("Creating visualization...")
         
         # Set matplotlib style
         try:
@@ -480,189 +611,84 @@ class MethodPerformanceVisualizer:
         except:
             logger.warning("Could not set plotting style, using default")
         
-        # Create 3x4 subplot layout (3 glaciers x 4 metrics)
-        fig, axes = plt.subplots(3, 4, figsize=self.config['visualization']['figsize'])
+        # Create figure - customize subplot layout as needed
+        fig, axes = plt.subplots(2, 2, figsize=self.config['visualization']['figsize'])
         
-        # Enhanced title with pixel selection information
-        main_title = 'Method Performance by Glacier and Metric'
-        subtitle = "Selected Best Pixels: 2/1/1 (Closest to AWS Stations)"
-        fig.suptitle(f'{main_title}\n{subtitle}', fontsize=16, fontweight='bold')
+        # Add main title
+        fig.suptitle('[ANALYSIS TITLE]', fontsize=16, fontweight='bold')
         
-        metrics = ['r', 'rmse', 'bias', 'mae']
-        metric_titles = ['Correlation (r)', 'RMSE', 'Bias', 'MAE']
-        glaciers = ['athabasca', 'coropuna', 'haig']  # Match your image order
+        # TODO: Implement your specific visualization logic here
+        # This is where you customize the plots based on your analysis
         
-        # Create combined dataframe for easier processing
-        all_data = pd.concat(processed_data, ignore_index=True) if processed_data else pd.DataFrame()
-        
-        # Create plots for each glacier-metric combination
-        for glacier_idx, glacier_id in enumerate(glaciers):
-            glacier_data = all_data[all_data['glacier_id'] == glacier_id] if not all_data.empty else pd.DataFrame()
-            
-            for metric_idx, (metric, metric_title) in enumerate(zip(metrics, metric_titles)):
-                ax = axes[glacier_idx, metric_idx]
-                
-                if not glacier_data.empty:
-                    # Prepare data for this glacier-metric combination
-                    method_values = []
-                    method_labels = []
-                    colors = []
-                    
-                    # Get available methods for this glacier, sorted
-                    available_methods = sorted(glacier_data['method'].unique())
-                    
-                    for method in available_methods:
-                        method_data = glacier_data[glacier_data['method'] == method]
-                        if not method_data.empty:
-                            method_values.append(method_data[metric].iloc[0])
-                            method_labels.append(method)
-                            colors.append(self.config['colors'].get(method, 'gray'))
-                    
-                    if method_values:  # If we have data to plot
-                        # Create bar chart
-                        bars = ax.bar(range(len(method_labels)), method_values, 
-                                     color=colors, alpha=0.7, edgecolor='black', linewidth=1)
-                        
-                        # Add value labels on bars
-                        for i, (bar, value) in enumerate(zip(bars, method_values)):
-                            height = bar.get_height()
-                            # Position text above or below bar depending on value
-                            if metric == 'bias' and value < 0:
-                                va = 'top'
-                                y_pos = height - abs(height)*0.02
-                            else:
-                                va = 'bottom'
-                                y_pos = height + abs(height)*0.02
-                            
-                            ax.text(bar.get_x() + bar.get_width()/2., y_pos,
-                                   f'{value:.3f}', ha='center', va=va, 
-                                   fontsize=9, fontweight='bold')
-                        
-                        # Highlight best performing method
-                        if len(method_values) > 1:
-                            if metric == 'r':  # Higher is better
-                                best_idx = method_values.index(max(method_values))
-                            elif metric in ['rmse', 'mae']:  # Lower is better
-                                best_idx = method_values.index(min(method_values))
-                            elif metric == 'bias':  # Closest to zero is better
-                                best_idx = method_values.index(min(method_values, key=abs))
-                            
-                            # Add gold highlighting to best method
-                            bars[best_idx].set_edgecolor('gold')
-                            bars[best_idx].set_linewidth(3)
-                            
-                            # Add gold star
-                            best_value = method_values[best_idx]
-                            star_y = best_value + abs(best_value)*0.08 if best_value >= 0 else best_value - abs(best_value)*0.08
-                            ax.text(best_idx, star_y, '★', ha='center', va='center', 
-                                   fontsize=12, color='gold', fontweight='bold')
-                        
-                        # Customize subplot
-                        ax.set_xticks(range(len(method_labels)))
-                        ax.set_xticklabels(method_labels, rotation=45, ha='right')
-                        ax.grid(True, alpha=0.3, axis='y')
-                        
-                        # Set y-axis limits for better comparison across glaciers
-                        if metric == 'r':
-                            ax.set_ylim(0, 1)
-                        elif metric in ['rmse', 'mae']:
-                            # Set common scale for error metrics
-                            all_values = all_data[metric].values
-                            ax.set_ylim(0, max(all_values) * 1.15)
-                        elif metric == 'bias':
-                            # Center bias around zero
-                            all_values = all_data[metric].values
-                            max_abs = max(abs(all_values)) if len(all_values) > 0 else 0.1
-                            ax.set_ylim(-max_abs * 1.2, max_abs * 1.2)
-                            ax.axhline(y=0, color='red', linestyle='--', alpha=0.5)
-                    else:
-                        # No data available
-                        ax.text(0.5, 0.5, 'No data available', transform=ax.transAxes,
-                               ha='center', va='center', fontsize=10, style='italic')
-                else:
-                    # No data for this glacier
-                    ax.text(0.5, 0.5, 'No data available', transform=ax.transAxes,
-                           ha='center', va='center', fontsize=10, style='italic')
-                
-                # Add glacier name to leftmost plots
-                if metric_idx == 0:
-                    ax.set_ylabel(f'{glacier_id.title()}\n{metric_title}', fontweight='bold')
-                else:
-                    ax.set_ylabel(metric_title)
-                
-                # Add metric title to top row
-                if glacier_idx == 0:
-                    ax.set_title(metric_title, fontweight='bold')
-        
-        # Add legend for method colors (show all possible methods)
-        legend_methods = ['MOD09GA', 'MCD43A3', 'MOD10A1']
-        legend_elements = [plt.Rectangle((0,0),1,1, facecolor=self.config['colors'].get(method, 'gray'), 
-                                       edgecolor='black', alpha=0.7, label=method) 
-                          for method in legend_methods]
-        legend_elements.append(plt.Rectangle((0,0),1,1, facecolor='none', 
-                                           edgecolor='gold', linewidth=3, 
-                                           label='Best Performance'))
-        
-        fig.legend(legend_elements, [elem.get_label() for elem in legend_elements], 
-                  loc='center', bbox_to_anchor=(0.5, 0.02), ncol=4, fontsize=10)
+        # Example placeholder plots
+        for i, ax in enumerate(axes.flat):
+            ax.text(0.5, 0.5, f'Plot {i+1}\n[Customize this]', 
+                   transform=ax.transAxes, ha='center', va='center',
+                   fontsize=12, style='italic')
+            ax.set_title(f'Subplot {i+1}')
         
         plt.tight_layout()
-        plt.subplots_adjust(bottom=0.08)  # Make room for legend
         
         # Save figure if path provided
         if output_path:
             fig.savefig(output_path, dpi=self.config['visualization']['dpi'], 
                        bbox_inches='tight', facecolor='white')
-            logger.info(f"Method performance matrix saved to: {output_path}")
+            logger.info(f"Visualization saved to: {output_path}")
         
         return fig
+    
+    def _create_subplot(self, ax, data, glacier_id, method):
+        """Create individual subplot for specific glacier-method combination.
+        
+        Args:
+            ax: matplotlib Axes object
+            data: Data for this subplot
+            glacier_id: Glacier identifier
+            method: MODIS method
+        """
+        # TODO: Implement specific subplot creation logic
+        # This is where you customize individual plots
+        
+        # Example placeholder
+        ax.scatter([1, 2, 3], [1, 2, 3], label=f'{glacier_id} - {method}')
+        ax.legend()
 
 # ============================================================================
 # SUMMARY AND DOCUMENTATION FUNCTIONS
 # ============================================================================
 
-def generate_summary_and_readme(output_manager: OutputManager, all_processed_data: List[pd.DataFrame]):
-    """Generate summary file and README with performance analysis results."""
+def generate_summary_and_readme(output_manager: OutputManager, processed_data: List[pd.DataFrame]):
+    """Generate summary file and README with analysis results.
+    
+    Args:
+        output_manager: OutputManager instance for file operations
+        processed_data: List of processed data for all glaciers
+    """
     try:
         # Collect statistics for summary
         glacier_stats = {}
-        all_metrics = {'correlation': [], 'rmse': [], 'mae': [], 'bias': []}
+        overall_stats = {}
         
-        for processed_data in all_processed_data:
-            glacier_id = processed_data['glacier_id'].iloc[0]
-            
-            # Collect glacier-specific statistics
-            glacier_stats[glacier_id] = {
-                'methods_processed': len(processed_data),
-                'methods': {}
-            }
-            
-            for _, row in processed_data.iterrows():
-                method = row['method']
-                glacier_stats[glacier_id]['methods'][method] = {
-                    'correlation': row['correlation'],
-                    'rmse': row['rmse'],
-                    'mae': row['mae'],
-                    'bias': row['bias'],
-                    'n_samples': row['n_samples']
+        # TODO: Customize this section based on your analysis results
+        # Process your specific data structure and extract relevant statistics
+        
+        for data_df in processed_data:
+            if not data_df.empty:
+                glacier_id = data_df['glacier_id'].iloc[0]
+                glacier_stats[glacier_id] = {
+                    'methods_processed': len(data_df),
+                    'total_observations': len(data_df),
+                    # Add your specific statistics here
                 }
-                
-                # Collect overall metrics
-                all_metrics['correlation'].append(row['correlation'])
-                all_metrics['rmse'].append(row['rmse'])
-                all_metrics['mae'].append(row['mae'])
-                all_metrics['bias'].append(row['bias'])
         
         # Calculate overall statistics
-        overall_stats = {}
-        for metric, values in all_metrics.items():
-            if values:
-                overall_stats[metric] = {
-                    'mean': np.mean(values),
-                    'std': np.std(values),
-                    'min': np.min(values),
-                    'max': np.max(values)
-                }
+        if processed_data:
+            # TODO: Add your overall statistics calculations
+            overall_stats = {
+                'total_glaciers': len(processed_data),
+                'total_methods': sum(len(df) for df in processed_data),
+                # Add your specific overall metrics here
+            }
         
         # Prepare summary data
         summary_data = {
@@ -671,19 +697,17 @@ def generate_summary_and_readme(output_manager: OutputManager, all_processed_dat
             'configuration': {
                 'glaciers': list(CONFIG['data_paths'].keys()),
                 'methods': CONFIG['methods'],
-                'metrics_calculated': ['Correlation', 'RMSE', 'MAE', 'Bias'],
+                'outlier_threshold': CONFIG['outlier_threshold'],
                 'quality_filters': CONFIG['quality_filters']
             },
             'data_info': {
-                'glaciers_processed': len(all_processed_data),
-                'total_method_comparisons': sum(len(df) for df in all_processed_data),
+                'glaciers_processed': len(processed_data),
+                'total_observations': sum(len(df) for df in processed_data),
                 'methods_analyzed': CONFIG['methods']
             },
             'key_results': {
-                'avg_correlation': round(overall_stats.get('correlation', {}).get('mean', 0), 4),
-                'avg_rmse': round(overall_stats.get('rmse', {}).get('mean', 0), 4),
-                'avg_mae': round(overall_stats.get('mae', {}).get('mean', 0), 4),
-                'avg_bias': round(overall_stats.get('bias', {}).get('mean', 0), 4)
+                # TODO: Add your key numerical results here
+                'example_metric': 0.0  # Replace with actual metrics
             },
             'statistics': {
                 'overall_metrics': overall_stats,
@@ -696,34 +720,25 @@ def generate_summary_and_readme(output_manager: OutputManager, all_processed_dat
         
         # Generate README
         key_findings = [
-            f"Compared performance of {len(CONFIG['methods'])} MODIS methods across {len(all_processed_data)} glaciers",
-            f"Generated 3×4 bar chart matrix (3 glaciers × 4 metrics)",
-            f"Average correlation across all methods: {overall_stats.get('correlation', {}).get('mean', 0):.3f}",
-            f"Average RMSE: {overall_stats.get('rmse', {}).get('mean', 0):.4f}"
+            # TODO: Customize these findings based on your analysis
+            f"Analyzed [ANALYSIS TYPE] for {len(CONFIG['methods'])} MODIS methods across {len(processed_data)} glaciers",
+            f"Generated [VISUALIZATION TYPE] with [SPECIFIC FEATURES]",
+            # Add more specific findings here
         ]
         
-        # Add best performing method overall
-        if all_metrics['correlation']:
-            best_idx = np.argmax(all_metrics['correlation'])
-            best_correlation = all_metrics['correlation'][best_idx]
-            key_findings.append(f"Best single correlation: {best_correlation:.3f}")
-        
-        # Add glacier-specific best methods
+        # TODO: Add glacier-specific findings
         for glacier_id, stats in glacier_stats.items():
-            if stats['methods']:
-                best_method = max(stats['methods'].keys(), 
-                                key=lambda x: stats['methods'][x]['correlation'])
-                best_r = stats['methods'][best_method]['correlation']
-                key_findings.append(f"{glacier_id.title()}: Best method {best_method} (r={best_r:.3f})")
+            key_findings.append(f"{glacier_id.title()}: [Add specific finding for this glacier]")
         
         output_manager.save_readme(
             analysis_description=CONFIG['output']['summary_template']['description'],
             key_findings=key_findings,
             additional_info={
-                'Metrics Calculated': 'Correlation (R), Root Mean Square Error (RMSE), Mean Absolute Error (MAE), Bias',
-                'Visualization Type': '3×4 bar chart matrix with method-specific color coding',
+                'Analysis Type': '[DETAILED ANALYSIS TYPE]',
+                'Methodology': '[BRIEF METHODOLOGY DESCRIPTION]',
                 'Quality Filters': f"Min glacier fraction: {CONFIG['quality_filters']['min_glacier_fraction']}, Min observations: {CONFIG['quality_filters']['min_observations']}",
-                'Best Performance Highlighting': 'Gold star indicators for best performing methods'
+                'Outlier Filtering': f"{CONFIG['outlier_threshold']}σ threshold applied",
+                # Add more analysis-specific information
             }
         )
         
@@ -738,7 +753,7 @@ def generate_summary_and_readme(output_manager: OutputManager, all_processed_dat
 
 def main():
     """Main execution function."""
-    logger.info("Starting Method Performance Bar Chart Generation")
+    logger.info("Starting [ANALYSIS NAME] Generation")
     
     # Initialize OutputManager
     output_manager = OutputManager(
@@ -750,7 +765,7 @@ def main():
     data_loader = DataLoader(CONFIG)
     pixel_selector = PixelSelector(CONFIG)
     data_processor = DataProcessor(CONFIG)
-    visualizer = MethodPerformanceVisualizer(CONFIG)
+    visualizer = AnalysisVisualizer(CONFIG)
     
     # Process each glacier
     all_processed_data = []
@@ -772,7 +787,7 @@ def main():
             
             if not processed.empty:
                 all_processed_data.append(processed)
-                logger.info(f"Successfully processed {glacier_id}: {len(processed)} methods")
+                logger.info(f"Successfully processed {glacier_id}: {len(processed)} records")
             else:
                 logger.warning(f"No processed data for {glacier_id}")
                 
@@ -783,14 +798,14 @@ def main():
     # Create visualization
     if all_processed_data:
         logger.info(f"\n{'='*50}")
-        logger.info("Creating Method Performance Bar Chart Matrix")
+        logger.info("Creating [ANALYSIS TYPE] Visualization")
         logger.info(f"{'='*50}")
         
         # Use OutputManager for plot path
         plot_path = output_manager.get_plot_path(CONFIG['output']['plot_filename'])
         
         # Create the plot
-        fig = visualizer.create_performance_matrix(all_processed_data, str(plot_path))
+        fig = visualizer.create_visualization(all_processed_data, str(plot_path))
         output_manager.log_file_saved(plot_path, "plot")
         
         # Show the plot
@@ -799,7 +814,7 @@ def main():
         # Generate summary and README
         generate_summary_and_readme(output_manager, all_processed_data)
         
-        logger.info(f"\nSUCCESS: Method performance matrix generated and saved")
+        logger.info(f"\nSUCCESS: [Analysis type] generated and saved")
         logger.info(f"Total glaciers processed: {len(all_processed_data)}")
         
     else:

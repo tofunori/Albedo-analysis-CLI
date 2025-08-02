@@ -4,28 +4,39 @@ Multi-Glacier Seasonal Analysis Generator
 
 Creates 3×4 seasonal boxplot analysis showing AWS vs MODIS method comparisons 
 across summer months (June-September) for all three glaciers.
+
+Author: Analysis System
+Date: 2025-08-02
 """
 
-# =============================================================================
+# ============================================================================
 # IMPORTS
-# =============================================================================
+# ============================================================================
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
-import warnings
-warnings.filterwarnings('ignore')
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import warnings
+
+from typing import Any, Dict, Optional, Tuple
+from datetime import datetime
+
+from output_manager import OutputManager
+
+# ============================================================================
+# LOGGING SETUP
+# ============================================================================
+
+warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
-# =============================================================================
+# ============================================================================
 # CONFIGURATION
-# =============================================================================
+# ============================================================================
 CONFIG = {
     'data_paths': {
         'athabasca': {
@@ -62,13 +73,22 @@ CONFIG = {
     'month_names': {6: 'June', 7: 'July', 8: 'August', 9: 'September'},
     'outlier_threshold': 2.5,
     'quality_filters': {'min_glacier_fraction': 0.1, 'min_observations': 10},
-    'visualization': {'figsize': (20, 15), 'dpi': 300, 'style': 'seaborn-v0_8'}
+    'visualization': {'figsize': (20, 15), 'dpi': 300, 'style': 'seaborn-v0_8'},
+    'output': {
+        'analysis_name': 'seasonal_analysis',
+        'base_dir': 'outputs',
+        'plot_filename': 'seasonal_boxplots.png',
+        'summary_template': {
+            'analysis_type': 'Multi-Glacier Seasonal Analysis',
+            'description': 'Seasonal boxplot analysis of AWS vs MODIS method comparisons across summer months'
+        }
+    }
 }
 
 
-# =============================================================================
-# DATA LOADING AND PREPROCESSING
-# =============================================================================
+# ============================================================================
+# DATA LOADING MODULE
+# ============================================================================
 
 class DataLoader:
     """Handles loading and preprocessing of MODIS and AWS data for all glaciers."""
@@ -192,9 +212,9 @@ class DataLoader:
         return aws_data
 
 
-# =============================================================================
-# PIXEL SELECTION
-# =============================================================================
+# ============================================================================
+# PIXEL SELECTION MODULE
+# ============================================================================
 
 class PixelSelector:
     """Implements intelligent pixel selection based on distance to AWS stations."""
@@ -261,9 +281,9 @@ class PixelSelector:
         return R * c
 
 
-# =============================================================================
-# SEASONAL DATA PROCESSING
-# =============================================================================
+# ============================================================================
+# DATA PROCESSING MODULE
+# ============================================================================
 
 class SeasonalDataProcessor:
     """Handles AWS-MODIS data merging and seasonal filtering."""
@@ -345,9 +365,9 @@ class SeasonalDataProcessor:
         return aws_vals[mask], modis_vals[mask], dates[mask]
 
 
-# =============================================================================
-# VISUALIZATION
-# =============================================================================
+# ============================================================================
+# VISUALIZATION MODULE
+# ============================================================================
 
 class SeasonalAnalysisVisualizer:
     """Creates the 3×4 seasonal analysis visualization."""
@@ -449,12 +469,146 @@ class SeasonalAnalysisVisualizer:
         ax.tick_params(axis='x', rotation=45)
 
 
-# =============================================================================
-# MAIN EXECUTION
-# =============================================================================
+# ============================================================================
+# SUMMARY AND DOCUMENTATION FUNCTIONS
+# ============================================================================
+
+def generate_summary_and_readme(output_manager: OutputManager, all_seasonal_data: Dict[str, pd.DataFrame]):
+    """Generate summary file and README with seasonal analysis results."""
+    try:
+        # Collect statistics for summary
+        glacier_stats = {}
+        all_albedos = []
+        
+        for glacier_id, seasonal_data in all_seasonal_data.items():
+            glacier_stats[glacier_id] = {
+                'methods_processed': len(seasonal_data['method'].unique()),
+                'total_observations': len(seasonal_data),
+                'monthly_data': {},
+                'methods': {}
+            }
+            
+            # Monthly statistics
+            for month in CONFIG['seasonal_months']:
+                month_data = seasonal_data[seasonal_data['month'] == month]
+                month_name = CONFIG['month_names'][month]
+                glacier_stats[glacier_id]['monthly_data'][month_name] = {
+                    'total_observations': len(month_data),
+                    'methods_available': len(month_data['method'].unique())
+                }
+            
+            # Method statistics
+            for method in CONFIG['methods']:
+                method_data = seasonal_data[seasonal_data['method'] == method]
+                if not method_data.empty:
+                    if method == 'AWS':
+                        albedo_values = method_data['aws_albedo']
+                    else:
+                        albedo_values = method_data['modis_albedo']
+                    
+                    glacier_stats[glacier_id]['methods'][method] = {
+                        'n_samples': len(albedo_values),
+                        'mean_albedo': albedo_values.mean(),
+                        'std_albedo': albedo_values.std(),
+                        'min_albedo': albedo_values.min(),
+                        'max_albedo': albedo_values.max()
+                    }
+                    all_albedos.extend(albedo_values.tolist())
+        
+        # Calculate overall statistics
+        overall_stats = {}
+        if all_albedos:
+            overall_stats = {
+                'mean_albedo': np.mean(all_albedos),
+                'std_albedo': np.std(all_albedos),
+                'min_albedo': np.min(all_albedos),
+                'max_albedo': np.max(all_albedos)
+            }
+        
+        # Prepare summary data
+        summary_data = {
+            'timestamp': datetime.now().isoformat(),
+            'analysis_type': CONFIG['output']['summary_template']['analysis_type'],
+            'configuration': {
+                'glaciers': list(CONFIG['data_paths'].keys()),
+                'methods': CONFIG['methods'],
+                'seasonal_months': [CONFIG['month_names'][m] for m in CONFIG['seasonal_months']],
+                'outlier_threshold': CONFIG['outlier_threshold'],
+                'quality_filters': CONFIG['quality_filters']
+            },
+            'data_info': {
+                'glaciers_processed': len(all_seasonal_data),
+                'total_observations': sum(len(df) for df in all_seasonal_data.values()),
+                'methods_analyzed': CONFIG['methods'],
+                'analysis_period': 'Summer months (June-September)'
+            },
+            'key_results': {
+                'overall_mean_albedo': round(overall_stats.get('mean_albedo', 0), 4),
+                'overall_std_albedo': round(overall_stats.get('std_albedo', 0), 4),
+                'albedo_range': f"{overall_stats.get('min_albedo', 0):.4f} to {overall_stats.get('max_albedo', 0):.4f}"
+            },
+            'statistics': {
+                'overall_metrics': overall_stats,
+                'glacier_performance': glacier_stats
+            }
+        }
+        
+        # Save summary
+        output_manager.save_summary(summary_data)
+        
+        # Generate README
+        key_findings = [
+            f"Analyzed seasonal patterns for {len(CONFIG['methods'])} methods across {len(all_seasonal_data)} glaciers",
+            f"Generated 3×4 seasonal boxplot analysis (3 glaciers × 4 summer months)",
+            f"Overall mean albedo: {overall_stats.get('mean_albedo', 0):.4f}",
+            f"Analysis focused on summer ablation season (June-September)"
+        ]
+        
+        # Add glacier-specific seasonal patterns
+        for glacier_id, stats in glacier_stats.items():
+            if stats['methods']:
+                aws_stats = stats['methods'].get('AWS', {})
+                if aws_stats:
+                    mean_albedo = aws_stats.get('mean_albedo', 0)
+                    key_findings.append(f"{glacier_id.title()}: Mean summer albedo {mean_albedo:.3f} (n={aws_stats.get('n_samples', 0)})")
+        
+        # Add monthly data availability
+        for month in CONFIG['seasonal_months']:
+            month_name = CONFIG['month_names'][month]
+            total_glaciers_with_data = sum(1 for stats in glacier_stats.values() 
+                                         if stats['monthly_data'].get(month_name, {}).get('total_observations', 0) > 0)
+            key_findings.append(f"{month_name}: Data available for {total_glaciers_with_data}/{len(all_seasonal_data)} glaciers")
+        
+        output_manager.save_readme(
+            analysis_description=CONFIG['output']['summary_template']['description'],
+            key_findings=key_findings,
+            additional_info={
+                'Analysis Type': '3×4 seasonal boxplot matrix',
+                'Seasonal Focus': 'Summer ablation season (June, July, August, September)',
+                'Visualization': 'Boxplots comparing AWS and MODIS methods by month',
+                'Quality Filters': f"Min glacier fraction: {CONFIG['quality_filters']['min_glacier_fraction']}, Min observations: {CONFIG['quality_filters']['min_observations']}",
+                'Outlier Filtering': f"{CONFIG['outlier_threshold']}σ threshold applied"
+            }
+        )
+        
+        logger.info("Summary and README generated successfully")
+        
+    except Exception as e:
+        logger.error(f"Error generating summary and README: {e}")
+
+
+# ============================================================================
+# MAIN EXECUTION FUNCTIONS
+# ============================================================================
 
 def main():
     logger.info("Starting Multi-Glacier Seasonal Analysis Generation")
+    
+    # Initialize OutputManager
+    output_manager = OutputManager(
+        CONFIG['output']['analysis_name'],
+        CONFIG['output']['base_dir']
+    )
     
     # Initialize components
     data_loader = DataLoader(CONFIG)
@@ -499,12 +653,20 @@ def main():
         logger.info("Creating Multi-Glacier Seasonal Analysis Visualization")
         logger.info(f"{'='*60}")
         
-        output_path = "multi_glacier_seasonal_analysis.png"
-        visualizer.create_seasonal_analysis(all_seasonal_data, output_path)
+        # Use OutputManager for plot path
+        plot_path = output_manager.get_plot_path(CONFIG['output']['plot_filename'])
         
+        # Create the plot
+        fig = visualizer.create_seasonal_analysis(all_seasonal_data, str(plot_path))
+        output_manager.log_file_saved(plot_path, "plot")
+        
+        # Show the plot
         plt.show()
         
-        logger.info(f"\n✅ SUCCESS: Seasonal analysis generated and saved to {output_path}")
+        # Generate summary and README
+        generate_summary_and_readme(output_manager, all_seasonal_data)
+        
+        logger.info(f"\n✅ SUCCESS: Seasonal analysis generated and saved")
         logger.info(f"📊 Total glaciers processed: {len(all_seasonal_data)}")
         
     else:

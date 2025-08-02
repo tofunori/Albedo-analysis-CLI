@@ -4,22 +4,41 @@ AWS vs MODIS Albedo Scatterplot Matrix Generator
 
 Modular pipeline: DATA LOADING → PIXEL SELECTION → DATA PROCESSING → VISUALIZATION
 Supports 3 glaciers with intelligent pixel selection and comprehensive statistics.
+
+Author: Analysis System
+Date: 2025-08-02
 """
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
+# ============================================================================
+# IMPORTS
+# ============================================================================
+
 import logging
+from datetime import datetime
 from pathlib import Path
-from typing import Dict, List, Any, Optional, Tuple
-from scipy import stats
+
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import warnings
+
+from scipy import stats
+
+from typing import Any, Dict, List, Optional, Tuple
+
+from output_manager import OutputManager
+
+# ============================================================================
+# LOGGING SETUP
+# ============================================================================
 
 warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-# Configuration
+# ============================================================================
+# CONFIGURATION
+# ============================================================================
 CONFIG = {
     'data_paths': {
         'athabasca': {
@@ -49,10 +68,21 @@ CONFIG = {
     },
     'outlier_threshold': 2.5,
     'quality_filters': {'min_glacier_fraction': 0.1, 'min_observations': 10},
-    'visualization': {'figsize': (12, 12), 'dpi': 300, 'style': 'seaborn-v0_8'}
+    'visualization': {'figsize': (12, 12), 'dpi': 300, 'style': 'seaborn-v0_8'},
+    'output': {
+        'analysis_name': 'aws_vs_modis_scatterplot',
+        'base_dir': 'outputs',
+        'plot_filename': 'aws_vs_modis_scatterplot_matrix.png',
+        'summary_template': {
+            'analysis_type': 'AWS vs MODIS Albedo Correlation Analysis',
+            'description': 'Scatterplot matrix comparing AWS and MODIS albedo measurements across three glaciers'
+        }
+    }
 }
 
-
+# ============================================================================
+# DATA LOADING MODULE
+# ============================================================================
 
 class DataLoader:
     """Handles loading and preprocessing of MODIS and AWS data for all glaciers."""
@@ -182,7 +212,9 @@ class DataLoader:
         data = data[(data['Albedo'] > 0) & (data['Albedo'] <= 1)]
         return data.drop_duplicates().sort_values('date').reset_index(drop=True)
 
-
+# ============================================================================
+# PIXEL SELECTION MODULE
+# ============================================================================
 
 class PixelSelector:
     """Implements intelligent pixel selection based on proximity to AWS stations and quality metrics."""
@@ -293,10 +325,9 @@ class PixelSelector:
         a = np.sin(dlat/2)**2 + np.cos(lat1) * np.cos(lat2) * np.sin(dlon/2)**2
         return R * 2 * np.arcsin(np.sqrt(a))
 
-
-# =============================================================================
+# ============================================================================
 # DATA PROCESSING MODULE
-# =============================================================================
+# ============================================================================
 
 class DataProcessor:
     """Handles AWS-MODIS data merging, outlier filtering, and statistical analysis."""
@@ -375,10 +406,9 @@ class DataProcessor:
             'bias': np.mean(residuals)
         }
 
-
-# =============================================================================
+# ============================================================================
 # VISUALIZATION MODULE
-# =============================================================================
+# ============================================================================
 
 class ScatterplotVisualizer:
     """Creates publication-ready AWS vs MODIS scatterplot matrices."""
@@ -484,16 +514,19 @@ class ScatterplotVisualizer:
         except Exception as e:
             logger.error(f"Error saving figure: {e}")
 
-
-# =============================================================================
-# PIPELINE ORCHESTRATION
-# =============================================================================
+# ============================================================================
+# PIPELINE ORCHESTRATION MODULE
+# ============================================================================
 
 class AnalysisPipeline:
     """Orchestrates the complete AWS vs MODIS analysis pipeline."""
     
     def __init__(self, config: Dict[str, Any]):
         self.config = config
+        self.output_manager = OutputManager(
+            config['output']['analysis_name'],
+            config['output']['base_dir']
+        )
         self.data_loader = DataLoader(config)
         self.pixel_selector = PixelSelector(config)
         self.data_processor = DataProcessor(config)
@@ -553,11 +586,16 @@ class AnalysisPipeline:
             logger.info("GENERATING VISUALIZATION")
             logger.info(f"{'='*50}")
             
-            if output_path is None:
-                output_path = "aws_vs_modis_scatterplot_matrix.png"
+            # Use OutputManager for plot path
+            plot_path = self.output_manager.get_plot_path(self.config['output']['plot_filename'])
             
-            self.visualizer.create_scatterplot_matrix(all_processed_data, output_path)
+            self.visualizer.create_scatterplot_matrix(all_processed_data, str(plot_path))
+            self.output_manager.log_file_saved(plot_path, "plot")
             plt.show()
+            
+            # Generate summary and README
+            self._generate_summary_and_readme(all_processed_data)
+            
             return True
             
         except Exception as e:
@@ -586,9 +624,102 @@ class AnalysisPipeline:
         success_rate = 100 * successful_combinations / total_combinations
         logger.info(f"\nOverall success rate: {successful_combinations}/{total_combinations} ({success_rate:.1f}%)")
         logger.info("Analysis pipeline completed successfully!")
+    
+    def _generate_summary_and_readme(self, all_processed_data: List[pd.DataFrame]):
+        """Generate summary file and README with analysis results."""
+        try:
+            # Collect statistics for summary
+            total_combinations = 0
+            successful_combinations = 0
+            glacier_stats = {}
+            
+            for processed_data in all_processed_data:
+                glacier_id = processed_data['glacier_id'].iloc[0]
+                n_methods = len(processed_data)
+                total_combinations += len(self.config['methods'])
+                successful_combinations += n_methods
+                
+                # Collect glacier-specific statistics
+                glacier_stats[glacier_id] = {
+                    'methods_processed': f"{n_methods}/{len(self.config['methods'])}",
+                    'methods': {}
+                }
+                
+                for _, row in processed_data.iterrows():
+                    method = row['method']
+                    glacier_stats[glacier_id]['methods'][method] = {
+                        'correlation': row['correlation'],
+                        'r_squared': row['r_squared'],
+                        'rmse': row['rmse'],
+                        'mae': row['mae'],
+                        'bias': row['bias'],
+                        'n_samples': row['n_samples'],
+                        'p_value': row['p_value']
+                    }
+            
+            success_rate = 100 * successful_combinations / total_combinations if total_combinations > 0 else 0
+            
+            # Prepare summary data
+            summary_data = {
+                'timestamp': datetime.now().isoformat(),
+                'analysis_type': self.config['output']['summary_template']['analysis_type'],
+                'configuration': {
+                    'glaciers': list(self.config['data_paths'].keys()),
+                    'methods': self.config['methods'],
+                    'outlier_threshold': self.config['outlier_threshold'],
+                    'quality_filters': self.config['quality_filters']
+                },
+                'data_info': {
+                    'total_glacier_method_combinations': total_combinations,
+                    'successful_combinations': successful_combinations,
+                    'success_rate_percent': round(success_rate, 1)
+                },
+                'key_results': {
+                    'glaciers_analyzed': len(all_processed_data),
+                    'total_methods_tested': len(self.config['methods']),
+                    'overall_success_rate': f"{success_rate:.1f}%"
+                },
+                'statistics': glacier_stats
+            }
+            
+            # Save summary
+            self.output_manager.save_summary(summary_data)
+            
+            # Generate README
+            key_findings = [
+                f"Analyzed {len(all_processed_data)} glaciers with {len(self.config['methods'])} MODIS methods each",
+                f"Overall success rate: {success_rate:.1f}% ({successful_combinations}/{total_combinations} combinations)",
+                f"Generated scatterplot matrix showing AWS vs MODIS correlations",
+                f"Used intelligent pixel selection based on glacier fraction and AWS proximity"
+            ]
+            
+            # Add best method findings
+            if glacier_stats:
+                for glacier_id, stats in glacier_stats.items():
+                    if stats['methods']:
+                        best_method = max(stats['methods'].keys(), 
+                                        key=lambda x: stats['methods'][x]['correlation'])
+                        best_r = stats['methods'][best_method]['correlation']
+                        key_findings.append(f"{glacier_id.title()}: Best method {best_method} (r={best_r:.3f})")
+            
+            self.output_manager.save_readme(
+                analysis_description=self.config['output']['summary_template']['description'],
+                key_findings=key_findings,
+                additional_info={
+                    'Quality Filters': f"Min glacier fraction: {self.config['quality_filters']['min_glacier_fraction']}, Min observations: {self.config['quality_filters']['min_observations']}",
+                    'Outlier Threshold': f"{self.config['outlier_threshold']} standard deviations",
+                    'Pixel Selection Strategy': "Distance-based selection with quality filtering"
+                }
+            )
+            
+            logger.info("Summary and README generated successfully")
+            
+        except Exception as e:
+            logger.error(f"Error generating summary and README: {e}")
 
-
-# Fix bare except statements
+# ============================================================================
+# UTILITY FUNCTIONS
+# ============================================================================
 def _handle_correlation_calculation(aws_vals: np.ndarray, modis_vals: np.ndarray) -> float:
     """Safe correlation calculation with proper exception handling."""
     if len(aws_vals) <= 1:
@@ -615,11 +746,9 @@ def _handle_significance_calculation(aws_vals: np.ndarray, modis_vals: np.ndarra
     except (ValueError, RuntimeWarning, FloatingPointError):
         return 1.0
 
-
-
-# =============================================================================
+# ============================================================================
 # MAIN EXECUTION FUNCTIONS
-# =============================================================================
+# ============================================================================
 
 def main():
     """Main execution function - runs the complete analysis pipeline."""

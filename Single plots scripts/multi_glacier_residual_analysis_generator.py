@@ -4,28 +4,39 @@ Multi-Glacier Residual Analysis Generator
 
 Creates 3×3 residual analysis showing AWS vs MODIS method error patterns
 across all three glaciers.
+
+Author: Analysis System
+Date: 2025-08-02
 """
 
-# =============================================================================
+# ============================================================================
 # IMPORTS
-# =============================================================================
+# ============================================================================
 
-import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import logging
 from pathlib import Path
-from typing import Dict, Any, Optional, Tuple
-import warnings
-warnings.filterwarnings('ignore')
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
+import warnings
+
+from typing import Any, Dict, Optional, Tuple
+from datetime import datetime
+
+from output_manager import OutputManager
+
+# ============================================================================
+# LOGGING SETUP
+# ============================================================================
+
+warnings.filterwarnings('ignore')
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 logger = logging.getLogger(__name__)
 
-
-# =============================================================================
+# ============================================================================
 # CONFIGURATION
-# =============================================================================
+# ============================================================================
 CONFIG = {
     'data_paths': {
         'athabasca': {
@@ -55,13 +66,22 @@ CONFIG = {
     },
     'outlier_threshold': 2.5,
     'quality_filters': {'min_glacier_fraction': 0.1, 'min_observations': 10},
-    'visualization': {'figsize': (18, 12), 'dpi': 300, 'style': 'seaborn-v0_8'}
+    'visualization': {'figsize': (18, 12), 'dpi': 300, 'style': 'seaborn-v0_8'},
+    'output': {
+        'analysis_name': 'residual_analysis',
+        'base_dir': 'outputs',
+        'plot_filename': 'residual_analysis_grid.png',
+        'summary_template': {
+            'analysis_type': 'Multi-Glacier Residual Analysis',
+            'description': 'Residual analysis showing AWS vs MODIS method error patterns across glaciers'
+        }
+    }
 }
 
 
-# =============================================================================
-# DATA LOADING AND PREPROCESSING
-# =============================================================================
+# ============================================================================
+# DATA LOADING MODULE
+# ============================================================================
 
 
 class DataLoader:
@@ -174,9 +194,9 @@ class DataLoader:
         return aws_data.drop_duplicates().sort_values('date').reset_index(drop=True)
 
 
-# =============================================================================
-# PIXEL SELECTION
-# =============================================================================
+# ============================================================================
+# PIXEL SELECTION MODULE
+# ============================================================================
 
 
 class PixelSelector:
@@ -244,9 +264,9 @@ class PixelSelector:
         return R * c
 
 
-# =============================================================================
-# RESIDUAL DATA PROCESSING
-# =============================================================================
+# ============================================================================
+# DATA PROCESSING MODULE
+# ============================================================================
 
 
 class ResidualDataProcessor:
@@ -316,9 +336,9 @@ class ResidualDataProcessor:
         return aws_vals[mask], modis_vals[mask], dates[mask]
 
 
-# =============================================================================
-# VISUALIZATION
-# =============================================================================
+# ============================================================================
+# VISUALIZATION MODULE
+# ============================================================================
 
 
 class ResidualAnalysisVisualizer:
@@ -419,15 +439,129 @@ class ResidualAnalysisVisualizer:
         ax.grid(True, alpha=0.3)
 
 
-# =============================================================================
-# MAIN EXECUTION
-# =============================================================================
+# ============================================================================
+# SUMMARY AND DOCUMENTATION FUNCTIONS
+# ============================================================================
+
+def generate_summary_and_readme(output_manager: OutputManager, all_residual_data: Dict[str, pd.DataFrame]):
+    """Generate summary file and README with residual analysis results."""
+    try:
+        # Collect statistics for summary
+        glacier_stats = {}
+        all_residuals = []
+        
+        for glacier_id, residual_data in all_residual_data.items():
+            glacier_stats[glacier_id] = {
+                'methods_processed': len(residual_data['method'].unique()),
+                'total_observations': len(residual_data),
+                'methods': {}
+            }
+            
+            for method in CONFIG['methods']:
+                method_data = residual_data[residual_data['method'] == method]
+                if not method_data.empty:
+                    residuals = method_data['residuals']
+                    glacier_stats[glacier_id]['methods'][method] = {
+                        'n_samples': len(residuals),
+                        'mean_residual': residuals.mean(),
+                        'std_residual': residuals.std(),
+                        'rmse': np.sqrt(np.mean(residuals**2))
+                    }
+                    all_residuals.extend(residuals.tolist())
+        
+        # Calculate overall statistics
+        overall_stats = {}
+        if all_residuals:
+            overall_stats = {
+                'mean_residual': np.mean(all_residuals),
+                'std_residual': np.std(all_residuals),
+                'rmse': np.sqrt(np.mean(np.array(all_residuals)**2)),
+                'min_residual': np.min(all_residuals),
+                'max_residual': np.max(all_residuals)
+            }
+        
+        # Prepare summary data
+        summary_data = {
+            'timestamp': datetime.now().isoformat(),
+            'analysis_type': CONFIG['output']['summary_template']['analysis_type'],
+            'configuration': {
+                'glaciers': list(CONFIG['data_paths'].keys()),
+                'methods': CONFIG['methods'],
+                'outlier_threshold': CONFIG['outlier_threshold'],
+                'quality_filters': CONFIG['quality_filters']
+            },
+            'data_info': {
+                'glaciers_processed': len(all_residual_data),
+                'total_observations': sum(len(df) for df in all_residual_data.values()),
+                'methods_analyzed': CONFIG['methods']
+            },
+            'key_results': {
+                'overall_mean_residual': round(overall_stats.get('mean_residual', 0), 4),
+                'overall_rmse': round(overall_stats.get('rmse', 0), 4),
+                'residual_range': f"{overall_stats.get('min_residual', 0):.4f} to {overall_stats.get('max_residual', 0):.4f}"
+            },
+            'statistics': {
+                'overall_metrics': overall_stats,
+                'glacier_performance': glacier_stats
+            }
+        }
+        
+        # Save summary
+        output_manager.save_summary(summary_data)
+        
+        # Generate README
+        key_findings = [
+            f"Analyzed residual patterns for {len(CONFIG['methods'])} MODIS methods across {len(all_residual_data)} glaciers",
+            f"Generated 3×3 residual analysis grid (3 glaciers × 3 methods)",
+            f"Overall mean residual: {overall_stats.get('mean_residual', 0):.4f}",
+            f"Overall RMSE: {overall_stats.get('rmse', 0):.4f}"
+        ]
+        
+        # Add glacier-specific residual patterns
+        for glacier_id, stats in glacier_stats.items():
+            if stats['methods']:
+                method_residuals = {}
+                for method, method_stats in stats['methods'].items():
+                    method_residuals[method] = method_stats['mean_residual']
+                
+                if method_residuals:
+                    best_method = min(method_residuals.keys(), key=lambda x: abs(method_residuals[x]))
+                    best_residual = method_residuals[best_method]
+                    key_findings.append(f"{glacier_id.title()}: {best_method} has smallest bias (residual={best_residual:.4f})")
+        
+        output_manager.save_readme(
+            analysis_description=CONFIG['output']['summary_template']['description'],
+            key_findings=key_findings,
+            additional_info={
+                'Analysis Type': '3×3 residual scatter plot matrix',
+                'Residual Calculation': 'MODIS albedo - AWS albedo',
+                'Quality Filters': f"Min glacier fraction: {CONFIG['quality_filters']['min_glacier_fraction']}, Min observations: {CONFIG['quality_filters']['min_observations']}",
+                'Outlier Filtering': f"{CONFIG['outlier_threshold']}σ threshold applied"
+            }
+        )
+        
+        logger.info("Summary and README generated successfully")
+        
+    except Exception as e:
+        logger.error(f"Error generating summary and README: {e}")
+
+
+# ============================================================================
+# MAIN EXECUTION FUNCTIONS
+# ============================================================================
 
 
 def main():
     """Main execution function."""
     logger.info("Starting Multi-Glacier Residual Analysis Generation")
     
+    # Initialize OutputManager
+    output_manager = OutputManager(
+        CONFIG['output']['analysis_name'],
+        CONFIG['output']['base_dir']
+    )
+    
+    # Initialize components
     data_loader = DataLoader(CONFIG)
     pixel_selector = PixelSelector(CONFIG)
     data_processor = ResidualDataProcessor(CONFIG)
@@ -470,11 +604,20 @@ def main():
         logger.info("Creating Multi-Glacier Residual Analysis Visualization")
         logger.info(f"{'='*60}")
         
-        output_path = "multi_glacier_residual_analysis.png"
-        visualizer.create_residual_analysis(all_residual_data, output_path)
+        # Use OutputManager for plot path
+        plot_path = output_manager.get_plot_path(CONFIG['output']['plot_filename'])
+        
+        # Create the plot
+        fig = visualizer.create_residual_analysis(all_residual_data, str(plot_path))
+        output_manager.log_file_saved(plot_path, "plot")
+        
+        # Show the plot
         plt.show()
         
-        logger.info(f"\\n✅ SUCCESS: Residual analysis generated and saved to {output_path}")
+        # Generate summary and README
+        generate_summary_and_readme(output_manager, all_residual_data)
+        
+        logger.info(f"\\n✅ SUCCESS: Residual analysis generated and saved")
         logger.info(f"📊 Total glaciers processed: {len(all_residual_data)}")
         
     else:
