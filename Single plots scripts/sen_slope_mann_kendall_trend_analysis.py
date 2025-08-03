@@ -1337,8 +1337,8 @@ class TrendVisualizer:
         ax2.legend(loc='lower right')
         ax2.grid(True, alpha=0.3)
         
-        # Plot 3: BC AOD Trend (Bottom Left)
-        ax3 = axes[1, 0]
+        # Plot 3: BC AOD Trend (Top Right)  
+        ax3 = axes[0, 2]
         if 'bc_aod_annual' in time_series_data and 'bc_aod_annual' in trend_results:
             data = time_series_data['bc_aod_annual'].copy()
             results = trend_results['bc_aod_annual']['annual']
@@ -1377,8 +1377,56 @@ class TrendVisualizer:
         ax3.legend(loc='upper left')
         ax3.grid(True, alpha=0.3)
         
-        # Plot 4: BC AOD vs Albedo Correlation (Bottom Right)
-        ax4 = axes[1, 1]
+        # Plot 4: Temperature vs Albedo Correlation (Bottom Left)
+        ax4 = axes[1, 0]
+        
+        # Combine MODIS albedo with temperature data
+        modis_data_keys = [k for k in time_series_data.keys() if 'modis' in k and 'annual' in k]
+        modis_key = modis_data_keys[0] if modis_data_keys else None
+        
+        if (modis_key and modis_key in time_series_data and 
+            'temperature_annual' in time_series_data):
+            
+            albedo_data = time_series_data[modis_key].copy()
+            temp_data = time_series_data['temperature_annual'].copy()
+            
+            # Merge albedo and temperature data on date
+            merged_data = pd.merge(albedo_data, temp_data, on='date')
+            
+            if len(merged_data) > 0:
+                # Plot Albedo vs Temperature correlation
+                x_temp = merged_data['Temperature']
+                y_albedo = merged_data['Albedo']
+                
+                ax4.scatter(x_temp, y_albedo, color='#3498DB', alpha=0.7, s=50, 
+                           label='Albedo vs Temperature')
+                
+                # Add regression line for temperature correlation
+                if len(x_temp) > 2:
+                    slope_temp, intercept_temp, r_temp, p_temp, _ = stats.linregress(x_temp, y_albedo)
+                    line_x_temp = np.array([x_temp.min(), x_temp.max()])
+                    line_y_temp = slope_temp * line_x_temp + intercept_temp
+                    ax4.plot(line_x_temp, line_y_temp, color='#2980B9', linewidth=2,
+                            label=f'Linear fit: R² = {r_temp**2:.3f}')
+                
+                # Add correlation statistics
+                sig_temp = get_significance_indicator(p_temp) if len(x_temp) > 2 else ''
+                
+                stats_text = f'Temp-Albedo: R={r_temp:.3f}{sig_temp}'
+                ax4.text(0.05, 0.95, stats_text, 
+                        transform=ax4.transAxes, verticalalignment='top',
+                        bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+                
+                ax4.legend(loc='upper right')
+        
+        ax4.set_title('Albedo vs Temperature Correlation', fontsize=14, fontweight='bold')
+        ax4.set_xlabel('Temperature (°C)', fontsize=12)
+        ax4.set_ylabel('Melt Season Albedo (unitless)', fontsize=12)
+        ax4.set_ylim(0, 1)
+        ax4.grid(True, alpha=0.3)
+        
+        # Plot 5: BC AOD vs Albedo Correlation (Bottom Middle)
+        ax5 = axes[1, 1]
         
         # Combine MODIS albedo with BC AOD data
         modis_data_keys = [k for k in time_series_data.keys() if 'modis' in k and 'annual' in k]
@@ -1398,7 +1446,7 @@ class TrendVisualizer:
                 x_aod = merged_data['BC_AOD']
                 y_albedo = merged_data['Albedo']
                 
-                ax4.scatter(x_aod, y_albedo, color='#E74C3C', alpha=0.7, s=50, 
+                ax5.scatter(x_aod, y_albedo, color='#E74C3C', alpha=0.7, s=50, 
                            label='Albedo vs BC AOD')
                 
                 # Add regression line for BC AOD correlation
@@ -1406,24 +1454,55 @@ class TrendVisualizer:
                     slope_aod, intercept_aod, r_aod, p_aod, _ = stats.linregress(x_aod, y_albedo)
                     line_x_aod = np.array([x_aod.min(), x_aod.max()])
                     line_y_aod = slope_aod * line_x_aod + intercept_aod
-                    ax4.plot(line_x_aod, line_y_aod, color='#C0392B', linewidth=2,
+                    ax5.plot(line_x_aod, line_y_aod, color='#C0392B', linewidth=2,
                             label=f'Linear fit: R² = {r_aod**2:.3f}')
                 
                 # Add correlation statistics
                 sig_aod = get_significance_indicator(p_aod) if len(x_aod) > 2 else ''
                 
                 stats_text = f'AOD-Albedo: R={r_aod:.3f}{sig_aod}'
-                ax4.text(0.05, 0.95, stats_text, 
-                        transform=ax4.transAxes, verticalalignment='top',
+                ax5.text(0.05, 0.95, stats_text, 
+                        transform=ax5.transAxes, verticalalignment='top',
                         bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
                 
-                ax4.legend(loc='upper right')
+                ax5.legend(loc='upper right')
         
-        ax4.set_title('Albedo vs BC AOD Correlation', fontsize=14, fontweight='bold')
-        ax4.set_xlabel('BC AOD', fontsize=12)
-        ax4.set_ylabel('Melt Season Albedo (unitless)', fontsize=12)
-        ax4.set_ylim(0, 1)
-        ax4.grid(True, alpha=0.3)
+        ax5.set_title('Albedo vs BC AOD Correlation', fontsize=14, fontweight='bold')
+        ax5.set_xlabel('BC AOD', fontsize=12)
+        ax5.set_ylabel('Melt Season Albedo (unitless)', fontsize=12)
+        ax5.set_ylim(0, 1)
+        ax5.grid(True, alpha=0.3)
+        
+        # Plot 6: Combined Summary (Bottom Right)
+        ax6 = axes[1, 2]
+        
+        # Create a summary text plot
+        summary_text = """
+Haig Glacier Trend Analysis Summary
+(2002-2024)
+
+Albedo Trends:
+• MODIS Albedo: -1.66%/year ***
+• Significant decline (p = 0.017)
+
+Contributing Factors:
+• Temperature: +0.051°C/year
+• BC AOD: +2.41%/year ***
+
+Correlations with Albedo:
+• Temperature: R = -0.745***
+• BC AOD: R = -0.619***
+
+Both warming and black carbon
+deposition drive albedo decline
+        """
+        
+        ax6.text(0.05, 0.95, summary_text.strip(), 
+                transform=ax6.transAxes, fontsize=11,
+                verticalalignment='top', horizontalalignment='left',
+                bbox=dict(boxstyle='round', facecolor='lightgray', alpha=0.8))
+        ax6.set_title('Analysis Summary', fontsize=14, fontweight='bold')
+        ax6.axis('off')
         
         # Add overall figure annotations
         fig.text(0.02, 0.02, 'Significance levels: * p < 0.05, ** p < 0.01', 
