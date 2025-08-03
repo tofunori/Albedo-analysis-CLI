@@ -1,0 +1,108 @@
+
+Monthly baseline (no precip): Albedo ~ Temperature + AOD
+--------------------------------------------------------
+n = 91, R^2 = 0.301, adj. R^2 = 0.285
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.646414     0.038989       16.580            0
+  Temperature     -0.012568     0.004467       -2.813      0.00604
+  BC_AOD          -6.921225     1.808389       -3.827     0.000242
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.205
+  BC_AOD       VIF = 1.205
+
+Monthly regression: Albedo ~ Temperature + Temperature2 + Precipitation + BC_AOD
+--------------------------------------------------------------------------------
+n = 91, R^2 = 0.383, adj. R^2 = 0.355
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.535414     0.051982       10.300            0
+  Temperature     -0.011625     0.004271       -2.722      0.00786
+  Temperature2    +0.003808     0.001237        3.077       0.0028
+  Precipitation    +0.000860     0.000403        2.132       0.0358
+  BC_AOD          -7.257922     1.736978       -4.178     7.02e-05
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.220
+  Temperature2 VIF = 1.088
+  Precipitation VIF = 1.077
+  BC_AOD       VIF = 1.231
+
+Monthly: Extended vs Baseline
+--------------------------------------------------
+n = 91, R^2 = 0.383, adj. R^2 = 0.355
+
+Model comparison (Extended vs Baseline):
+  Δadj R² = +0.069
+  ΔAIC = -7.38 (lower is better)
+  ΔBIC = -2.36 (lower is better)
+  Nested F-test: F = 5.730, p = 0.005
+
+Monthly standardized coefficients (predictors z-scored)
+-------------------------------------------------------
+n = 91, R^2 = 0.383, adj. R^2 = 0.355
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.471208     0.012888       36.562            0
+  Temperature_z    -0.038965     0.014316       -2.722      0.00786
+  Temperature2_z    +0.041600     0.013518        3.077       0.0028
+  Precipitation_z    +0.028675     0.013448        2.132       0.0358
+  BC_AOD_z        -0.060089     0.014381       -4.178     7.02e-05
+
+Influence check (Cook's distance) – monthly additive model
+----------------------------------------------------------
+n = 91, R^2 = 0.383, adj. R^2 = 0.355
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.535414     0.051982       10.300            0
+  Temperature     -0.011625     0.004271       -2.722      0.00786
+  Temperature2    +0.003808     0.001237        3.077       0.0028
+  Precipitation    +0.000860     0.000403        2.132       0.0358
+  BC_AOD          -7.257922     1.736978       -4.178     7.02e-05
+
+Cook's distance: threshold = 4/n = 0.044
+High-influence indices (0-based) = [57, 66, 67, 71]
+High-influence months = ['2016-07', '2018-08', '2018-09', '2019-09']
+
+Monthly additive model refit (excluding high Cook's D)
+------------------------------------------------------
+n = 87, R^2 = 0.503, adj. R^2 = 0.479
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.551311     0.046372       11.889            0
+  Temperature     -0.013916     0.003863       -3.602      0.00054
+  Temperature2    +0.004865     0.001114        4.366     3.66e-05
+  Precipitation    +0.001079     0.000367        2.938      0.00429
+  BC_AOD          -8.740912     1.821685       -4.798     7.08e-06
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.236
+  Temperature2 VIF = 1.077
+  Precipitation VIF = 1.059
+  BC_AOD       VIF = 1.263
+
+LMG relative importance (monthly additive model)
+--------------------------------------------------
+n = 91, R^2 = 0.383, adj. R^2 = 0.355
+
+Relative importance (LMG, monthly):
+  BC_AOD        ΔR² = 0.182 | share = 47.5%
+  Temperature   ΔR² = 0.119 | share = 31.1%
+  Temperature2  ΔR² = 0.055 | share = 14.4%
+  Precipitation ΔR² = 0.027 | share = 7.1%
+
+Partial R² by predictor (monthly additive model)
+--------------------------------------------------
+n = 91, R^2 = 0.383, adj. R^2 = 0.355
+
+Partial R² (monthly):
+  Temperature   partial R² = 0.053
+  Temperature2  partial R² = 0.068
+  Precipitation partial R² = 0.033
+  BC_AOD        partial R² = 0.125

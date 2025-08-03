@@ -1,0 +1,19 @@
+Multi-Glacier Comparative Analysis Summary
+==================================================
+
+Total Glaciers: 3
+Total Methods: 5
+Total Observations: 5231
+
+Geographic Range:
+  Latitude: -15.54 to 52.20
+  Elevation: 2200m to 5400m
+
+Performance Ranges:
+  Correlation: 0.448 to 0.809
+  RMSE: 0.104 to 0.265
+  Bias: -0.199 to -0.036
+
+Best Performing Methods:
+  Highest Correlation: mod10a1 on coropuna (r=0.809)
+  Lowest RMSE: MOD09GA on coropuna (RMSE=0.104)

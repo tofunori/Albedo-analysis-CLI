@@ -1,0 +1,2 @@
+model,n_observations,r_squared,adjusted_r_squared,temp_positive_coef,temp_negative_coef,dalpha_dt_positive
+hinge_temperature,2166,0.14378051939537606,0.14179852985693941,-0.007272937254692469,-0.030683298604104403,-0.007272937254692469

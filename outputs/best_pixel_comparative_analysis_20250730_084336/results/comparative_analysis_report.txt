@@ -1,0 +1,70 @@
+Multi-Glacier Comparative Analysis Report
+==================================================
+
+Generated: 2025-07-30 08:44:09
+
+SUMMARY STATISTICS
+--------------------
+Total Glaciers: 3
+Total Methods: 5
+Total Observations: 5,231
+
+GEOGRAPHIC COVERAGE
+--------------------
+Latitude Range: -15.54° to 52.20°
+Elevation Range: 2200m to 5400m
+
+STATISTICAL TEST RESULTS
+--------------------
+Method Performance ANOVA:
+  r: F=2.220, p=0.159 (not significant)
+  rmse: F=6.609, p=0.015 (significant)
+  mae: F=4.036, p=0.052 (not significant)
+  bias: F=3.232, p=0.083 (not significant)
+
+METHOD CONSISTENCY RANKINGS
+--------------------
+R Consistency (most to least consistent):
+  1. myd10a1 (CV=0.110)
+  2. mod10a1 (CV=0.136)
+  3. MOD09GA (CV=0.192)
+  4. MYD09GA (CV=0.210)
+  5. mcd43a3 (CV=0.282)
+
+RMSE Consistency (most to least consistent):
+  1. myd10a1 (CV=0.034)
+  2. MYD09GA (CV=0.215)
+  3. MOD09GA (CV=0.265)
+  4. mod10a1 (CV=0.277)
+  5. mcd43a3 (CV=0.353)
+
+MAE Consistency (most to least consistent):
+  1. myd10a1 (CV=0.027)
+  2. mod10a1 (CV=0.223)
+  3. MOD09GA (CV=0.257)
+  4. MYD09GA (CV=0.291)
+  5. mcd43a3 (CV=0.448)
+
+BIAS Consistency (most to least consistent):
+  1. myd10a1 (CV=0.035)
+  2. MOD09GA (CV=0.319)
+  3. MYD09GA (CV=0.354)
+  4. mod10a1 (CV=0.362)
+  5. mcd43a3 (CV=0.497)
+
+GENERATED OUTPUTS
+--------------------
+Visualizations:
+  • Method performance matrix heatmap
+  • Cross-glacier scatterplot matrix
+  • Regional comparison boxplots
+  • Sample size vs performance analysis
+  • Bias comparison radar chart
+  • Environmental factor analysis
+  • Temporal coverage comparison
+  • Statistical confidence dashboard
+
+Data Files:
+  • comparative_summary.csv
+  • statistical_test_results.csv
+  • method_consistency_analysis.csv

@@ -1,0 +1,14 @@
+
+Multiple regression: Albedo ~ Temperature + BC_AOD
+--------------------------------------------------
+n = 23, R^2 = 0.579, adj. R^2 = 0.537
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.959529     0.125929        7.620     2.45e-07
+  Temperature     -0.052474     0.015752       -3.331      0.00333
+  BC_AOD          -4.192604     3.487778       -1.202        0.243
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.581
+  BC_AOD       VIF = 1.581

@@ -1,0 +1,5 @@
+,test,statistic,p_value,significant,effect_size,effect_size_interpretation,regions_compared
+r,Mann-Whitney U,9.0,0.12742812742812742,False,-0.55,large,"['Canadian Rockies', 'Peruvian Andes']"
+rmse,Mann-Whitney U,29.0,0.2222222222222222,False,0.45,medium,"['Canadian Rockies', 'Peruvian Andes']"
+mae,Mann-Whitney U,23.0,0.7241647241647241,False,0.15,small,"['Canadian Rockies', 'Peruvian Andes']"
+bias,Mann-Whitney U,19.0,0.9432789432789432,False,-0.05,negligible,"['Canadian Rockies', 'Peruvian Andes']"

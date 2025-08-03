@@ -1,0 +1,142 @@
+
+Baseline model (no precip): Albedo ~ Temperature + BC_AOD
+---------------------------------------------------------
+n = 23, R^2 = 0.579, adj. R^2 = 0.537
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.959529     0.125929        7.620     2.45e-07
+  Temperature     -0.052474     0.015752       -3.331      0.00333
+  BC_AOD          -4.192604     3.487778       -1.202        0.243
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.581
+  BC_AOD       VIF = 1.581
+
+Multiple regression: Albedo ~ Temperature + BC_AOD + Snowfall + Rainfall + Total_Precip
+---------------------------------------------------------------------------------------
+n = 23, R^2 = -1089.939, adj. R^2 = -1410.803
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept      -12.998970    11.542760       -1.126        0.276
+  Temperature     +2.117346     1.070634        1.978       0.0644
+  BC_AOD        -712.631810   175.240422       -4.067     0.000803
+  Snowfall     -1793626.500000          nan          nan          nan
+  Rainfall     -1793627.000000          nan          nan          nan
+  Total_Precip +1793626.750000          nan          nan          nan
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 2.621
+  BC_AOD       VIF = 1.682
+  Snowfall     VIF = 45955098238474.445
+  Rainfall     VIF = 105967050055776.375
+  Total_Precip VIF = 191642537334914.719
+
+Extended vs Baseline comparison
+--------------------------------------------------
+n = 23, R^2 = -1089.939, adj. R^2 = -1410.803
+
+Coefficients:
+  term            coef         SE           t           p
+
+Model comparison (Extended vs Baseline):
+  Δadj R² = -1411.340 (Extended: -1410.803, Baseline: 0.537)
+  ΔAIC = +186.78 (lower is better)
+  ΔBIC = +190.18 (lower is better)
+  Nested F-test: F = -5.664, p = 1.000 (tests if added terms improve fit)
+
+Standardized coefficients (predictors z-scored)
+--------------------------------------------------
+n = 23, R^2 = 0.688, adj. R^2 = 0.596
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.449754     0.012634       35.598            0
+  Temperature_z    -0.059861     0.020899       -2.864       0.0107
+  BC_AOD_z        -0.029067     0.016719       -1.739          0.1
+  Snowfall_z   +175296.144165 84392.435323        2.077       0.0533
+  Rainfall_z   +266891.623047 128489.059796        2.077       0.0533
+  Total_Precip_z -356914.959961 171828.792572       -2.077       0.0533
+
+Influence check (Cook's distance) for additive model
+----------------------------------------------------
+n = 23, R^2 = -1089.939, adj. R^2 = -1410.803
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept      -12.998970    11.542760       -1.126        0.276
+  Temperature     +2.117346     1.070634        1.978       0.0644
+  BC_AOD        -712.631810   175.240422       -4.067     0.000803
+  Snowfall     -1793626.500000          nan          nan          nan
+  Rainfall     -1793627.000000          nan          nan          nan
+  Total_Precip +1793626.750000          nan          nan          nan
+
+Cook's distance: threshold = 4/n = 0.174
+High-influence indices (0-based) = [3, 20]
+
+Additive model refit (excluding high Cook's D)
+--------------------------------------------------
+n = 21, R^2 = -2.743, adj. R^2 = -3.990
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +1.759914     0.839340        2.097       0.0534
+  Temperature     -0.153227     0.075801       -2.021       0.0615
+  BC_AOD         +29.061028    11.682361        2.488       0.0251
+  Snowfall     +496033.625000 972457.736390        0.510        0.617
+  Rainfall     +496033.250000 972457.757325        0.510        0.617
+  Total_Precip -496033.375000 972457.747988       -0.510        0.617
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 3.006
+  BC_AOD       VIF = 1.835
+  Snowfall     VIF = 29149512151265.348
+  Rainfall     VIF = 115476913522320.406
+  Total_Precip VIF = 147659004176081.844
+
+Centered interaction (controls: none beyond T and BC): Albedo ~ T_c + B_c + T_c×B_c
+-----------------------------------------------------------------------------------
+n = 23, R^2 = 0.614, adj. R^2 = 0.553
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.437550     0.016185       27.034            0
+  T_c             -0.047255     0.015965       -2.960      0.00804
+  B_c             -7.172219     4.101713       -1.749       0.0965
+  T_c×B_c         +3.821951     2.895300        1.320        0.203
+
+Variance Inflation Factors (VIF):
+  T_c          VIF = 1.684
+  B_c          VIF = 2.268
+  Txc          VIF = 1.467
+
+Robustness: trimmed windows (drop first 3 years, baseline predictors)
+---------------------------------------------------------------------
+n = 20, R^2 = 0.537, adj. R^2 = 0.482
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.933265     0.143528        6.502     5.42e-06
+  Temperature     -0.049343     0.017709       -2.786       0.0127
+  BC_AOD          -4.386070     3.755181       -1.168        0.259
+
+Robustness: trimmed windows (drop last 3 years, baseline predictors)
+--------------------------------------------------------------------
+n = 20, R^2 = 0.516, adj. R^2 = 0.459
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.926947     0.133962        6.920     2.48e-06
+  Temperature     -0.050015     0.017071       -2.930      0.00935
+  BC_AOD          -2.326202     3.773356       -0.616        0.546
+
+Robustness: median annual aggregation (JJAS, baseline predictors)
+-----------------------------------------------------------------
+n = 23, R^2 = 0.666, adj. R^2 = 0.632
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +1.169905     0.121802        9.605      6.2e-09
+  Temperature     -0.064464     0.016725       -3.854     0.000989
+  BC_AOD         -23.944457    16.333608       -1.466        0.158

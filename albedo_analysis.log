@@ -1,0 +1,266 @@
+2025-07-30 13:38:41,931 - analysis.spatial.glacier_mapping_simple - INFO - Loaded configuration for 3 glaciers
+2025-07-30 13:38:41,931 - analysis.spatial.glacier_mapping_simple - INFO - Simple Multi-Glacier Mapper initialized
+2025-07-30 15:35:24,849 - __main__ - INFO - Testing plotting fix...
+2025-07-30 15:35:24,849 - __main__ - ERROR - Test failed with error: AlbedoAnalysisEngine.__init__() missing 1 required positional argument: 'config_path'
+2025-07-30 15:35:40,074 - __main__ - INFO - Testing plotting fix...
+2025-07-30 15:35:40,083 - __main__ - INFO - Running analysis for Haig glacier...
+2025-07-30 15:35:40,083 - __main__ - ERROR - Test failed with error: 'AlbedoAnalysisEngine' object has no attribute 'analyze_glacier'
+2025-07-30 15:36:03,410 - __main__ - INFO - Testing plotting fix...
+2025-07-30 15:36:03,417 - __main__ - INFO - Running analysis for Haig glacier...
+2025-07-30 15:36:03,417 - __main__ - ERROR - Test failed with error: AlbedoAnalysisEngine.process_glacier() got an unexpected keyword argument 'analysis_type'
+2025-07-30 15:36:24,159 - __main__ - INFO - Testing plotting fix...
+2025-07-30 15:36:24,165 - __main__ - INFO - Running analysis for Haig glacier...
+2025-07-30 15:36:24,165 - albedo_engine.engine - INFO - Starting analysis for glacier: haig
+2025-07-30 15:36:24,165 - albedo_engine.engine - INFO - Analysis mode: enhanced, Selected pixels: False
+2025-07-30 15:36:24,171 - albedo_engine.engine - INFO - Using analysis mode: enhanced
+2025-07-30 15:36:24,173 - albedo_engine.engine - INFO - Using enhanced analysis pipeline (mode: enhanced)...
+2025-07-30 15:36:24,173 - albedo_engine.engine - INFO - Loading data using pivot-based approach...
+2025-07-30 15:36:24,173 - albedo_engine.engine - INFO - Found MultiProduct file: data/modis/haig\Haig_MODIS_Pixel_Analysis_MultiProduct_2002_to_2016_fraction.csv
+2025-07-30 15:36:24,174 - data_processing.loaders.pivot_loaders - INFO - Loading Athabasca multi-product data from: data/modis/haig\Haig_MODIS_Pixel_Analysis_MultiProduct_2002_to_2016_fraction.csv
+2025-07-30 15:36:24,220 - data_processing.loaders.pivot_loaders - INFO - Loaded data shape: (18998, 24)
+2025-07-30 15:36:24,220 - data_processing.loaders.pivot_loaders - INFO - Available columns: ['pixel_id', 'date', 'qa_mode', 'method', 'albedo', 'glacier_fraction', 'ndsi', 'solar_zenith', 'elevation', 'slope', 'aspect', 'longitude', 'latitude', 'tile_h', 'tile_v', 'pixel_row', 'pixel_col', 'sur_refl_b01', 'sur_refl_b02', 'sur_refl_b03', 'sur_refl_b04', 'sur_refl_b05', 'sur_refl_b06', 'sur_refl_b07']
+2025-07-30 15:36:24,225 - data_processing.loaders.pivot_loaders - INFO - Data is already in long format
+2025-07-30 15:36:24,237 - data_processing.loaders.pivot_loaders - INFO - Found 18998 records in long format
+2025-07-30 15:36:24,238 - data_processing.loaders.pivot_loaders - INFO - Available methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:36:24,240 - albedo_engine.engine - INFO - Found AWS file: data/aws\HaigAWS_daily_2002_2015_gapfilled.csv
+2025-07-30 15:36:24,240 - data_processing.loaders.pivot_loaders - INFO - Loading AWS data from: data/aws\HaigAWS_daily_2002_2015_gapfilled.csv
+2025-07-30 15:36:24,240 - data_processing.loaders.pivot_loaders - INFO - Detected Haig AWS format (semicolon separated)
+2025-07-30 15:36:24,251 - data_processing.loaders.pivot_loaders - INFO - AWS columns: ['Year', 'Day', 'T (degC)', 'Tmin (degC)', 'Tmax (degC)', 'RH (%)', 'qv (g/kg)', 'ev (mb)', 'P (mb)', 'v (m/s)', '(W/m2)', '(W/m2).1', 'albedo', '(W/m2).2', '(W/m2).3', 'flag', 'Unnamed: 16']
+2025-07-30 15:36:24,271 - data_processing.loaders.pivot_loaders - INFO - Using albedo column: 'albedo'
+2025-07-30 15:36:24,275 - data_processing.loaders.pivot_loaders - INFO - Cleaned AWS data: 5113 records
+2025-07-30 15:36:24,275 - albedo_engine.engine - INFO - Loaded MODIS data: 18998 records
+2025-07-30 15:36:24,275 - albedo_engine.engine - INFO - Loaded AWS data: 5113 records
+2025-07-30 15:36:24,275 - albedo_engine.engine - INFO - Applying Terra/Aqua merge...
+2025-07-30 15:36:24,275 - data_processing.processors.pivot_processor - INFO - Applying Terra/Aqua merge...
+2025-07-30 15:36:24,295 - data_processing.processors.pivot_processor - INFO - Terra/Aqua merge complete - Final MODIS rows: 18998
+2025-07-30 15:36:24,296 - data_processing.processors.pivot_processor - INFO - Source breakdown: {'terra_only': 8424}
+2025-07-30 15:36:24,297 - albedo_engine.engine - INFO - Creating pivot table and merging with AWS...
+2025-07-30 15:36:24,297 - data_processing.processors.pivot_processor - INFO - Creating pivot table and merging with AWS data...
+2025-07-30 15:36:24,305 - data_processing.processors.pivot_processor - INFO - Created MODIS pivot table: (1285, 3)
+2025-07-30 15:36:24,306 - data_processing.processors.pivot_processor - INFO - Available methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:36:24,312 - data_processing.processors.pivot_processor - INFO - Added glacier_fraction data to analysis
+2025-07-30 15:36:24,319 - data_processing.processors.pivot_processor - INFO - Added solar_zenith data to analysis
+2025-07-30 15:36:24,323 - data_processing.processors.pivot_processor - INFO - Added ndsi data to analysis
+2025-07-30 15:36:24,330 - data_processing.processors.pivot_processor - INFO - Added pixel_id data to analysis
+2025-07-30 15:36:24,341 - data_processing.processors.pivot_processor - INFO - Final merged dataset: (1285, 20)
+2025-07-30 15:36:24,341 - data_processing.processors.pivot_processor - INFO - Date range: 2002-06-12 00:00:00 to 2015-09-30 00:00:00
+2025-07-30 15:36:24,341 - data_processing.processors.pivot_processor - INFO - Total overlapping observations: 1285
+2025-07-30 15:36:24,342 - albedo_engine.engine - INFO - Performing enhanced statistical analysis...
+2025-07-30 15:36:24,342 - albedo_engine.engine - INFO - Analyzing methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:36:24,346 - albedo_engine.engine - INFO - MCD43A3: n=1190, r=0.4349, RMSE=0.2672, Bias=-0.1975
+2025-07-30 15:36:24,351 - albedo_engine.engine - INFO - MOD09GA: n=615, r=0.6086, RMSE=0.1804, Bias=-0.0762
+2025-07-30 15:36:24,354 - albedo_engine.engine - INFO - MOD10A1: n=490, r=0.6125, RMSE=0.1882, Bias=-0.0931
+2025-07-30 15:36:24,357 - albedo_engine.engine - INFO - Performing outlier analysis...
+2025-07-30 15:36:24,367 - albedo_engine.engine - INFO - MCD43A3: Removed 25 outliers (2.1%), r improved by 5.6%
+2025-07-30 15:36:24,371 - albedo_engine.engine - INFO - MOD09GA: Removed 14 outliers (2.3%), r improved by 11.3%
+2025-07-30 15:36:24,375 - albedo_engine.engine - INFO - MOD10A1: Removed 10 outliers (2.0%), r improved by 10.6%
+2025-07-30 15:36:24,375 - albedo_engine.engine - INFO - Generating enhanced plots...
+2025-07-30 15:36:24,607 - albedo_engine.engine - ERROR - Error creating comprehensive summary: No module named 'analysis.core.statistical_analysis'
+2025-07-30 15:36:24,631 - albedo_engine.engine - ERROR - Error creating temporal analysis for MCD43A3: No module named 'analysis.core.statistical_analysis'
+2025-07-30 15:36:24,652 - albedo_engine.engine - ERROR - Error creating temporal analysis for MOD09GA: No module named 'analysis.core.statistical_analysis'
+2025-07-30 15:36:24,670 - albedo_engine.engine - ERROR - Error creating temporal analysis for MOD10A1: No module named 'analysis.core.statistical_analysis'
+2025-07-30 15:36:25,169 - visualization.plots.statistical_plots - INFO - Boxplot saved to outputs\haig_enhanced_20250730_153624\plots\haig_04_distribution_analysis.png
+2025-07-30 15:36:25,172 - albedo_engine.engine - INFO - Generated distribution analysis: outputs\haig_enhanced_20250730_153624\plots\haig_04_distribution_analysis.png
+2025-07-30 15:36:25,687 - visualization.plots.statistical_plots - INFO - Boxplot saved to outputs\haig_enhanced_20250730_153624\plots\haig_05_outlier_analysis.png
+2025-07-30 15:36:25,688 - albedo_engine.engine - INFO - Generated outlier analysis: outputs\haig_enhanced_20250730_153624\plots\haig_05_outlier_analysis.png
+2025-07-30 15:36:25,688 - albedo_engine.engine - WARNING - No date column available for seasonal analysis
+2025-07-30 15:36:25,720 - albedo_engine.engine - ERROR - Error creating correlation & bias analysis: No module named 'analysis.core.statistical_analysis'
+2025-07-30 15:36:27,021 - albedo_engine.engine - INFO - Created comprehensive analysis plot: outputs\haig_enhanced_20250730_153624\plots\haig_comprehensive_analysis.png
+2025-07-30 15:36:27,024 - albedo_engine.engine - INFO - Generated pivot-based comprehensive analysis: outputs\haig_enhanced_20250730_153624\plots\haig_pivot_based_comprehensive_analysis.png
+2025-07-30 15:36:27,024 - albedo_engine.engine - INFO - Completed generating all 7 original plots for haig
+2025-07-30 15:36:27,024 - albedo_engine.engine - INFO - Exporting enhanced results...
+2025-07-30 15:36:27,031 - albedo_engine.engine - INFO - Exported method comparison: outputs\haig_enhanced_20250730_153624\results\haig_enhanced_method_comparison.csv
+2025-07-30 15:36:27,035 - albedo_engine.engine - INFO - Exported method ranking: outputs\haig_enhanced_20250730_153624\results\haig_enhanced_method_ranking.csv
+2025-07-30 15:36:27,058 - albedo_engine.engine - INFO - Exported merged data: outputs\haig_enhanced_20250730_153624\results\haig_enhanced_merged_data.csv
+2025-07-30 15:36:27,058 - albedo_engine.engine - INFO - Enhanced analysis completed for glacier: haig
+2025-07-30 15:36:27,058 - albedo_engine.engine - INFO - Successfully processed 1285 merged observations
+2025-07-30 15:36:27,059 - __main__ - INFO - Analysis completed successfully!
+2025-07-30 15:36:27,059 - __main__ - INFO - Results keys: ['glacier_id', 'analysis_type', 'analysis_timestamp', 'output_directory', 'n_merged_observations', 'available_methods', 'date_range', 'statistics']
+2025-07-30 15:36:27,061 - __main__ - INFO - Generated 4 plot files:
+2025-07-30 15:36:27,061 - __main__ - INFO -   - haig_04_distribution_analysis.png
+2025-07-30 15:36:27,061 - __main__ - INFO -   - haig_05_outlier_analysis.png
+2025-07-30 15:36:27,061 - __main__ - INFO -   - haig_comprehensive_analysis.png
+2025-07-30 15:36:27,061 - __main__ - INFO -   - haig_pivot_based_comprehensive_analysis.png
+2025-07-30 15:37:18,344 - __main__ - INFO - Testing plotting fix...
+2025-07-30 15:37:18,352 - __main__ - INFO - Running analysis for Haig glacier...
+2025-07-30 15:37:18,352 - albedo_engine.engine - INFO - Starting analysis for glacier: haig
+2025-07-30 15:37:18,352 - albedo_engine.engine - INFO - Analysis mode: enhanced, Selected pixels: False
+2025-07-30 15:37:18,360 - albedo_engine.engine - INFO - Using analysis mode: enhanced
+2025-07-30 15:37:18,361 - albedo_engine.engine - INFO - Using enhanced analysis pipeline (mode: enhanced)...
+2025-07-30 15:37:18,362 - albedo_engine.engine - INFO - Loading data using pivot-based approach...
+2025-07-30 15:37:18,362 - albedo_engine.engine - INFO - Found MultiProduct file: data/modis/haig\Haig_MODIS_Pixel_Analysis_MultiProduct_2002_to_2016_fraction.csv
+2025-07-30 15:37:18,362 - data_processing.loaders.pivot_loaders - INFO - Loading Athabasca multi-product data from: data/modis/haig\Haig_MODIS_Pixel_Analysis_MultiProduct_2002_to_2016_fraction.csv
+2025-07-30 15:37:18,409 - data_processing.loaders.pivot_loaders - INFO - Loaded data shape: (18998, 24)
+2025-07-30 15:37:18,409 - data_processing.loaders.pivot_loaders - INFO - Available columns: ['pixel_id', 'date', 'qa_mode', 'method', 'albedo', 'glacier_fraction', 'ndsi', 'solar_zenith', 'elevation', 'slope', 'aspect', 'longitude', 'latitude', 'tile_h', 'tile_v', 'pixel_row', 'pixel_col', 'sur_refl_b01', 'sur_refl_b02', 'sur_refl_b03', 'sur_refl_b04', 'sur_refl_b05', 'sur_refl_b06', 'sur_refl_b07']
+2025-07-30 15:37:18,415 - data_processing.loaders.pivot_loaders - INFO - Data is already in long format
+2025-07-30 15:37:18,424 - data_processing.loaders.pivot_loaders - INFO - Found 18998 records in long format
+2025-07-30 15:37:18,425 - data_processing.loaders.pivot_loaders - INFO - Available methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:37:18,428 - albedo_engine.engine - INFO - Found AWS file: data/aws\HaigAWS_daily_2002_2015_gapfilled.csv
+2025-07-30 15:37:18,428 - data_processing.loaders.pivot_loaders - INFO - Loading AWS data from: data/aws\HaigAWS_daily_2002_2015_gapfilled.csv
+2025-07-30 15:37:18,429 - data_processing.loaders.pivot_loaders - INFO - Detected Haig AWS format (semicolon separated)
+2025-07-30 15:37:18,439 - data_processing.loaders.pivot_loaders - INFO - AWS columns: ['Year', 'Day', 'T (degC)', 'Tmin (degC)', 'Tmax (degC)', 'RH (%)', 'qv (g/kg)', 'ev (mb)', 'P (mb)', 'v (m/s)', '(W/m2)', '(W/m2).1', 'albedo', '(W/m2).2', '(W/m2).3', 'flag', 'Unnamed: 16']
+2025-07-30 15:37:18,460 - data_processing.loaders.pivot_loaders - INFO - Using albedo column: 'albedo'
+2025-07-30 15:37:18,463 - data_processing.loaders.pivot_loaders - INFO - Cleaned AWS data: 5113 records
+2025-07-30 15:37:18,463 - albedo_engine.engine - INFO - Loaded MODIS data: 18998 records
+2025-07-30 15:37:18,463 - albedo_engine.engine - INFO - Loaded AWS data: 5113 records
+2025-07-30 15:37:18,463 - albedo_engine.engine - INFO - Applying Terra/Aqua merge...
+2025-07-30 15:37:18,465 - data_processing.processors.pivot_processor - INFO - Applying Terra/Aqua merge...
+2025-07-30 15:37:18,482 - data_processing.processors.pivot_processor - INFO - Terra/Aqua merge complete - Final MODIS rows: 18998
+2025-07-30 15:37:18,483 - data_processing.processors.pivot_processor - INFO - Source breakdown: {'terra_only': 8424}
+2025-07-30 15:37:18,483 - albedo_engine.engine - INFO - Creating pivot table and merging with AWS...
+2025-07-30 15:37:18,483 - data_processing.processors.pivot_processor - INFO - Creating pivot table and merging with AWS data...
+2025-07-30 15:37:18,490 - data_processing.processors.pivot_processor - INFO - Created MODIS pivot table: (1285, 3)
+2025-07-30 15:37:18,491 - data_processing.processors.pivot_processor - INFO - Available methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:37:18,496 - data_processing.processors.pivot_processor - INFO - Added glacier_fraction data to analysis
+2025-07-30 15:37:18,502 - data_processing.processors.pivot_processor - INFO - Added solar_zenith data to analysis
+2025-07-30 15:37:18,508 - data_processing.processors.pivot_processor - INFO - Added ndsi data to analysis
+2025-07-30 15:37:18,513 - data_processing.processors.pivot_processor - INFO - Added pixel_id data to analysis
+2025-07-30 15:37:18,525 - data_processing.processors.pivot_processor - INFO - Final merged dataset: (1285, 20)
+2025-07-30 15:37:18,525 - data_processing.processors.pivot_processor - INFO - Date range: 2002-06-12 00:00:00 to 2015-09-30 00:00:00
+2025-07-30 15:37:18,526 - data_processing.processors.pivot_processor - INFO - Total overlapping observations: 1285
+2025-07-30 15:37:18,526 - albedo_engine.engine - INFO - Performing enhanced statistical analysis...
+2025-07-30 15:37:18,526 - albedo_engine.engine - INFO - Analyzing methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:37:18,532 - albedo_engine.engine - INFO - MCD43A3: n=1190, r=0.4349, RMSE=0.2672, Bias=-0.1975
+2025-07-30 15:37:18,536 - albedo_engine.engine - INFO - MOD09GA: n=615, r=0.6086, RMSE=0.1804, Bias=-0.0762
+2025-07-30 15:37:18,539 - albedo_engine.engine - INFO - MOD10A1: n=490, r=0.6125, RMSE=0.1882, Bias=-0.0931
+2025-07-30 15:37:18,541 - albedo_engine.engine - INFO - Performing outlier analysis...
+2025-07-30 15:37:18,541 - albedo_engine.engine - INFO - Performing residual-based outlier detection (2.5 sigma threshold)
+2025-07-30 15:37:18,546 - albedo_engine.engine - INFO - MCD43A3: Removed 25 outliers (2.1%), r improved by 5.6%
+2025-07-30 15:37:18,552 - albedo_engine.engine - INFO - MOD09GA: Removed 14 outliers (2.3%), r improved by 11.3%
+2025-07-30 15:37:18,556 - albedo_engine.engine - INFO - MOD10A1: Removed 10 outliers (2.0%), r improved by 10.6%
+2025-07-30 15:37:18,556 - albedo_engine.engine - INFO - Generating enhanced plots...
+2025-07-30 15:37:18,556 - albedo_engine.engine - INFO - Available columns in merged_data: ['MCD43A3', 'MOD09GA', 'MOD10A1', 'AWS', 'glacier_fraction_MCD43A3', 'glacier_fraction_MOD09GA', 'glacier_fraction_MOD10A1', 'glacier_fraction', 'solar_zenith_MCD43A3', 'solar_zenith_MOD09GA', 'solar_zenith_MOD10A1', 'solar_zenith', 'ndsi_MCD43A3', 'ndsi_MOD09GA', 'ndsi_MOD10A1', 'ndsi', 'pixel_id_MCD43A3', 'pixel_id_MOD09GA', 'pixel_id_MOD10A1', 'pixel_id']
+2025-07-30 15:37:18,557 - albedo_engine.engine - WARNING - No 'date' column found in merged_data. Available columns: ['MCD43A3', 'MOD09GA', 'MOD10A1', 'AWS', 'glacier_fraction_MCD43A3', 'glacier_fraction_MOD09GA', 'glacier_fraction_MOD10A1', 'glacier_fraction', 'solar_zenith_MCD43A3', 'solar_zenith_MOD09GA', 'solar_zenith_MOD10A1', 'solar_zenith', 'ndsi_MCD43A3', 'ndsi_MOD09GA', 'ndsi_MOD10A1', 'ndsi', 'pixel_id_MCD43A3', 'pixel_id_MOD09GA', 'pixel_id_MOD10A1', 'pixel_id']
+2025-07-30 15:37:18,916 - albedo_engine.engine - ERROR - Error creating comprehensive summary: DLL load failed while importing lib: La procédure spécifiée est introuvable.
+2025-07-30 15:37:18,961 - albedo_engine.engine - ERROR - Error creating temporal analysis for MCD43A3: DLL load failed while importing lib: La procédure spécifiée est introuvable.
+2025-07-30 15:37:19,000 - albedo_engine.engine - ERROR - Error creating temporal analysis for MOD09GA: DLL load failed while importing lib: La procédure spécifiée est introuvable.
+2025-07-30 15:37:19,040 - albedo_engine.engine - ERROR - Error creating temporal analysis for MOD10A1: DLL load failed while importing lib: La procédure spécifiée est introuvable.
+2025-07-30 15:37:19,556 - visualization.plots.statistical_plots - INFO - Boxplot saved to outputs\haig_enhanced_20250730_153718\plots\haig_04_distribution_analysis.png
+2025-07-30 15:37:19,559 - albedo_engine.engine - INFO - Generated distribution analysis: outputs\haig_enhanced_20250730_153718\plots\haig_04_distribution_analysis.png
+2025-07-30 15:37:20,233 - visualization.plots.statistical_plots - INFO - Boxplot saved to outputs\haig_enhanced_20250730_153718\plots\haig_05_outlier_analysis.png
+2025-07-30 15:37:20,235 - albedo_engine.engine - INFO - Generated outlier analysis: outputs\haig_enhanced_20250730_153718\plots\haig_05_outlier_analysis.png
+2025-07-30 15:37:20,235 - albedo_engine.engine - WARNING - No date column available for seasonal analysis
+2025-07-30 15:37:20,290 - albedo_engine.engine - ERROR - Error creating correlation & bias analysis: DLL load failed while importing lib: La procédure spécifiée est introuvable.
+2025-07-30 15:37:21,639 - albedo_engine.engine - INFO - Created comprehensive analysis plot: outputs\haig_enhanced_20250730_153718\plots\haig_comprehensive_analysis.png
+2025-07-30 15:37:21,644 - albedo_engine.engine - INFO - Generated pivot-based comprehensive analysis: outputs\haig_enhanced_20250730_153718\plots\haig_pivot_based_comprehensive_analysis.png
+2025-07-30 15:37:21,644 - albedo_engine.engine - INFO - Completed generating all 7 original plots for haig
+2025-07-30 15:37:21,644 - albedo_engine.engine - INFO - Exporting enhanced results...
+2025-07-30 15:37:21,650 - albedo_engine.engine - INFO - Exported method comparison: outputs\haig_enhanced_20250730_153718\results\haig_enhanced_method_comparison.csv
+2025-07-30 15:37:21,655 - albedo_engine.engine - INFO - Exported method ranking: outputs\haig_enhanced_20250730_153718\results\haig_enhanced_method_ranking.csv
+2025-07-30 15:37:21,679 - albedo_engine.engine - INFO - Exported merged data: outputs\haig_enhanced_20250730_153718\results\haig_enhanced_merged_data.csv
+2025-07-30 15:37:21,680 - albedo_engine.engine - INFO - Enhanced analysis completed for glacier: haig
+2025-07-30 15:37:21,680 - albedo_engine.engine - INFO - Successfully processed 1285 merged observations
+2025-07-30 15:37:21,681 - __main__ - INFO - Analysis completed successfully!
+2025-07-30 15:37:21,681 - __main__ - INFO - Results keys: ['glacier_id', 'analysis_type', 'analysis_timestamp', 'output_directory', 'n_merged_observations', 'available_methods', 'date_range', 'statistics']
+2025-07-30 15:37:21,682 - __main__ - INFO - Generated 4 plot files:
+2025-07-30 15:37:21,682 - __main__ - INFO -   - haig_04_distribution_analysis.png
+2025-07-30 15:37:21,682 - __main__ - INFO -   - haig_05_outlier_analysis.png
+2025-07-30 15:37:21,682 - __main__ - INFO -   - haig_comprehensive_analysis.png
+2025-07-30 15:37:21,682 - __main__ - INFO -   - haig_pivot_based_comprehensive_analysis.png
+2025-07-30 15:46:31,493 - __main__ - INFO - Testing plotting fix...
+2025-07-30 15:46:31,503 - __main__ - INFO - Running analysis for Haig glacier...
+2025-07-30 15:46:31,503 - albedo_engine.engine - INFO - Starting analysis for glacier: haig
+2025-07-30 15:46:31,504 - albedo_engine.engine - INFO - Analysis mode: enhanced, Selected pixels: False
+2025-07-30 15:46:31,510 - albedo_engine.engine - INFO - Using analysis mode: enhanced
+2025-07-30 15:46:31,511 - albedo_engine.engine - INFO - Using enhanced analysis pipeline (mode: enhanced)...
+2025-07-30 15:46:31,511 - albedo_engine.engine - INFO - Loading data using pivot-based approach...
+2025-07-30 15:46:31,511 - albedo_engine.engine - INFO - Found MultiProduct file: data/modis/haig\Haig_MODIS_Pixel_Analysis_MultiProduct_2002_to_2016_fraction.csv
+2025-07-30 15:46:31,511 - data_processing.loaders.pivot_loaders - INFO - Loading Athabasca multi-product data from: data/modis/haig\Haig_MODIS_Pixel_Analysis_MultiProduct_2002_to_2016_fraction.csv
+2025-07-30 15:46:31,561 - data_processing.loaders.pivot_loaders - INFO - Loaded data shape: (18998, 24)
+2025-07-30 15:46:31,561 - data_processing.loaders.pivot_loaders - INFO - Available columns: ['pixel_id', 'date', 'qa_mode', 'method', 'albedo', 'glacier_fraction', 'ndsi', 'solar_zenith', 'elevation', 'slope', 'aspect', 'longitude', 'latitude', 'tile_h', 'tile_v', 'pixel_row', 'pixel_col', 'sur_refl_b01', 'sur_refl_b02', 'sur_refl_b03', 'sur_refl_b04', 'sur_refl_b05', 'sur_refl_b06', 'sur_refl_b07']
+2025-07-30 15:46:31,568 - data_processing.loaders.pivot_loaders - INFO - Data is already in long format
+2025-07-30 15:46:31,583 - data_processing.loaders.pivot_loaders - INFO - Found 18998 records in long format
+2025-07-30 15:46:31,584 - data_processing.loaders.pivot_loaders - INFO - Available methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:46:31,588 - albedo_engine.engine - INFO - Found AWS file: data/aws\HaigAWS_daily_2002_2015_gapfilled.csv
+2025-07-30 15:46:31,588 - data_processing.loaders.pivot_loaders - INFO - Loading AWS data from: data/aws\HaigAWS_daily_2002_2015_gapfilled.csv
+2025-07-30 15:46:31,588 - data_processing.loaders.pivot_loaders - INFO - Detected Haig AWS format (semicolon separated)
+2025-07-30 15:46:31,601 - data_processing.loaders.pivot_loaders - INFO - AWS columns: ['Year', 'Day', 'T (degC)', 'Tmin (degC)', 'Tmax (degC)', 'RH (%)', 'qv (g/kg)', 'ev (mb)', 'P (mb)', 'v (m/s)', '(W/m2)', '(W/m2).1', 'albedo', '(W/m2).2', '(W/m2).3', 'flag', 'Unnamed: 16']
+2025-07-30 15:46:31,622 - data_processing.loaders.pivot_loaders - INFO - Using albedo column: 'albedo'
+2025-07-30 15:46:31,626 - data_processing.loaders.pivot_loaders - INFO - Cleaned AWS data: 5113 records
+2025-07-30 15:46:31,626 - albedo_engine.engine - INFO - Loaded MODIS data: 18998 records
+2025-07-30 15:46:31,626 - albedo_engine.engine - INFO - Loaded AWS data: 5113 records
+2025-07-30 15:46:31,626 - albedo_engine.engine - INFO - Applying Terra/Aqua merge...
+2025-07-30 15:46:31,626 - data_processing.processors.pivot_processor - INFO - Applying Terra/Aqua merge...
+2025-07-30 15:46:31,645 - data_processing.processors.pivot_processor - INFO - Terra/Aqua merge complete - Final MODIS rows: 18998
+2025-07-30 15:46:31,647 - data_processing.processors.pivot_processor - INFO - Source breakdown: {'terra_only': 8424}
+2025-07-30 15:46:31,648 - albedo_engine.engine - INFO - Creating pivot table and merging with AWS...
+2025-07-30 15:46:31,648 - data_processing.processors.pivot_processor - INFO - Creating pivot table and merging with AWS data...
+2025-07-30 15:46:31,657 - data_processing.processors.pivot_processor - INFO - Created MODIS pivot table: (1285, 3)
+2025-07-30 15:46:31,657 - data_processing.processors.pivot_processor - INFO - Available methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:46:31,665 - data_processing.processors.pivot_processor - INFO - Added glacier_fraction data to analysis
+2025-07-30 15:46:31,675 - data_processing.processors.pivot_processor - INFO - Added solar_zenith data to analysis
+2025-07-30 15:46:31,682 - data_processing.processors.pivot_processor - INFO - Added ndsi data to analysis
+2025-07-30 15:46:31,687 - data_processing.processors.pivot_processor - INFO - Added pixel_id data to analysis
+2025-07-30 15:46:31,700 - data_processing.processors.pivot_processor - INFO - Final merged dataset: (1285, 20)
+2025-07-30 15:46:31,701 - data_processing.processors.pivot_processor - INFO - Date range: 2002-06-12 00:00:00 to 2015-09-30 00:00:00
+2025-07-30 15:46:31,701 - data_processing.processors.pivot_processor - INFO - Total overlapping observations: 1285
+2025-07-30 15:46:31,701 - albedo_engine.engine - INFO - Performing enhanced statistical analysis...
+2025-07-30 15:46:31,701 - albedo_engine.engine - INFO - Analyzing methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+2025-07-30 15:46:31,706 - albedo_engine.engine - INFO - MCD43A3: n=1190, r=0.4349, RMSE=0.2672, Bias=-0.1975
+2025-07-30 15:46:31,712 - albedo_engine.engine - INFO - MOD09GA: n=615, r=0.6086, RMSE=0.1804, Bias=-0.0762
+2025-07-30 15:46:31,718 - albedo_engine.engine - INFO - MOD10A1: n=490, r=0.6125, RMSE=0.1882, Bias=-0.0931
+2025-07-30 15:46:31,722 - albedo_engine.engine - INFO - Performing outlier analysis...
+2025-07-30 15:46:31,722 - albedo_engine.engine - INFO - Performing residual-based outlier detection (2.5 sigma threshold)
+2025-07-30 15:46:31,730 - albedo_engine.engine - INFO - MCD43A3: Removed 25 outliers (2.1%), r improved by 5.6%
+2025-07-30 15:46:31,736 - albedo_engine.engine - INFO - MOD09GA: Removed 14 outliers (2.3%), r improved by 11.3%
+2025-07-30 15:46:31,742 - albedo_engine.engine - INFO - MOD10A1: Removed 10 outliers (2.0%), r improved by 10.6%
+2025-07-30 15:46:31,742 - albedo_engine.engine - INFO - Generating enhanced plots...
+2025-07-30 15:46:31,742 - albedo_engine.engine - INFO - Available columns in merged_data: ['MCD43A3', 'MOD09GA', 'MOD10A1', 'AWS', 'glacier_fraction_MCD43A3', 'glacier_fraction_MOD09GA', 'glacier_fraction_MOD10A1', 'glacier_fraction', 'solar_zenith_MCD43A3', 'solar_zenith_MOD09GA', 'solar_zenith_MOD10A1', 'solar_zenith', 'ndsi_MCD43A3', 'ndsi_MOD09GA', 'ndsi_MOD10A1', 'ndsi', 'pixel_id_MCD43A3', 'pixel_id_MOD09GA', 'pixel_id_MOD10A1', 'pixel_id']
+2025-07-30 15:46:31,743 - albedo_engine.engine - WARNING - No 'date' column found in merged_data. Available columns: ['MCD43A3', 'MOD09GA', 'MOD10A1', 'AWS', 'glacier_fraction_MCD43A3', 'glacier_fraction_MOD09GA', 'glacier_fraction_MOD10A1', 'glacier_fraction', 'solar_zenith_MCD43A3', 'solar_zenith_MOD09GA', 'solar_zenith_MOD10A1', 'solar_zenith', 'ndsi_MCD43A3', 'ndsi_MOD09GA', 'ndsi_MOD10A1', 'ndsi', 'pixel_id_MCD43A3', 'pixel_id_MOD09GA', 'pixel_id_MOD10A1', 'pixel_id']
+2025-07-30 15:46:32,200 - albedo_engine.engine - ERROR - Error creating comprehensive summary: DLL load failed while importing lib: La procédure spécifiée est introuvable.
+2025-07-30 15:46:32,209 - albedo_engine.engine - ERROR - Full error: Traceback (most recent call last):
+  File "D:\Documents\Projects\Albedo_analysis_New\albedo_engine\engine.py", line 302, in _generate_all_original_plots
+    fig = plot_generator.create_summary_figure(
+          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "D:\Documents\Projects\Albedo_analysis_New\visualization\plots\statistical_plots.py", line 476, in create_summary_figure
+    self._create_single_scatterplot_axis(
+  File "D:\Documents\Projects\Albedo_analysis_New\visualization\plots\statistical_plots.py", line 201, in _create_single_scatterplot_axis
+    from analysis.core.statistical_analyzer import StatisticalAnalyzer
+  File "D:\Documents\Projects\Albedo_analysis_New\analysis\core\statistical_analyzer.py", line 6, in <module>
+    from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+  File "C:\Users\thier\miniforge3\Lib\site-packages\sklearn\__init__.py", line 73, in <module>
+    from .base import clone  # noqa: E402
+    ^^^^^^^^^^^^^^^^^^^^^^^
+  File "C:\Users\thier\miniforge3\Lib\site-packages\sklearn\base.py", line 19, in <module>
+    from .utils._metadata_requests import _MetadataRequester, _routing_enabled
+  File "C:\Users\thier\miniforge3\Lib\site-packages\sklearn\utils\__init__.py", line 9, in <module>
+    from ._chunking import gen_batches, gen_even_slices
+  File "C:\Users\thier\miniforge3\Lib\site-packages\sklearn\utils\_chunking.py", line 11, in <module>
+    from ._param_validation import Interval, validate_params
+  File "C:\Users\thier\miniforge3\Lib\site-packages\sklearn\utils\_param_validation.py", line 17, in <module>
+    from .validation import _is_arraylike_not_scalar
+  File "C:\Users\thier\miniforge3\Lib\site-packages\sklearn\utils\validation.py", line 21, in <module>
+    from ..utils._array_api import _asarray_with_order, _is_numpy_namespace, get_namespace
+  File "C:\Users\thier\miniforge3\Lib\site-packages\sklearn\utils\_array_api.py", line 20, in <module>
+    from .fixes import parse_version
+  File "C:\Users\thier\miniforge3\Lib\site-packages\sklearn\utils\fixes.py", line 421, in <module>
+    import pyarrow
+  File "C:\Users\thier\miniforge3\Lib\site-packages\pyarrow\__init__.py", line 61, in <module>
+    import pyarrow.lib as _lib
+ImportError: DLL load failed while importing lib: La procédure spécifiée est introuvable.
+
+2025-07-30 15:46:32,210 - albedo_engine.engine - WARNING - No melted data available for temporal analysis
+2025-07-30 15:46:32,769 - visualization.plots.statistical_plots - INFO - Boxplot saved to outputs\haig_enhanced_20250730_154631\plots\haig_04_distribution_analysis.png
+2025-07-30 15:46:32,775 - albedo_engine.engine - INFO - Generated distribution analysis: outputs\haig_enhanced_20250730_154631\plots\haig_04_distribution_analysis.png
+2025-07-30 15:46:33,365 - visualization.plots.statistical_plots - INFO - Boxplot saved to outputs\haig_enhanced_20250730_154631\plots\haig_05_outlier_analysis.png
+2025-07-30 15:46:33,366 - albedo_engine.engine - INFO - Generated outlier analysis: outputs\haig_enhanced_20250730_154631\plots\haig_05_outlier_analysis.png
+2025-07-30 15:46:33,366 - albedo_engine.engine - WARNING - No date column available for seasonal analysis
+2025-07-30 15:46:33,999 - visualization.plots.statistical_plots - INFO - Correlation matrix saved to outputs\haig_enhanced_20250730_154631\plots\haig_07_correlation_bias_analysis.png
+2025-07-30 15:46:34,000 - albedo_engine.engine - INFO - Generated correlation & bias analysis: outputs\haig_enhanced_20250730_154631\plots\haig_07_correlation_bias_analysis.png
+2025-07-30 15:46:35,311 - albedo_engine.engine - INFO - Created comprehensive analysis plot: outputs\haig_enhanced_20250730_154631\plots\haig_comprehensive_analysis.png
+2025-07-30 15:46:35,324 - albedo_engine.engine - INFO - Generated pivot-based comprehensive analysis: outputs\haig_enhanced_20250730_154631\plots\haig_pivot_based_comprehensive_analysis.png
+2025-07-30 15:46:35,325 - albedo_engine.engine - INFO - Completed generating all 7 original plots for haig
+2025-07-30 15:46:35,325 - albedo_engine.engine - INFO - Exporting enhanced results...
+2025-07-30 15:46:35,331 - albedo_engine.engine - INFO - Exported method comparison: outputs\haig_enhanced_20250730_154631\results\haig_enhanced_method_comparison.csv
+2025-07-30 15:46:35,335 - albedo_engine.engine - INFO - Exported method ranking: outputs\haig_enhanced_20250730_154631\results\haig_enhanced_method_ranking.csv
+2025-07-30 15:46:35,362 - albedo_engine.engine - INFO - Exported merged data: outputs\haig_enhanced_20250730_154631\results\haig_enhanced_merged_data.csv
+2025-07-30 15:46:35,362 - albedo_engine.engine - INFO - Enhanced analysis completed for glacier: haig
+2025-07-30 15:46:35,363 - albedo_engine.engine - INFO - Successfully processed 1285 merged observations
+2025-07-30 15:46:35,364 - __main__ - INFO - Analysis completed successfully!
+2025-07-30 15:46:35,365 - __main__ - INFO - Results keys: ['glacier_id', 'analysis_type', 'analysis_timestamp', 'output_directory', 'n_merged_observations', 'available_methods', 'date_range', 'statistics']
+2025-07-30 15:46:35,365 - __main__ - INFO - Generated 5 plot files:
+2025-07-30 15:46:35,365 - __main__ - INFO -   - haig_04_distribution_analysis.png
+2025-07-30 15:46:35,365 - __main__ - INFO -   - haig_05_outlier_analysis.png
+2025-07-30 15:46:35,365 - __main__ - INFO -   - haig_07_correlation_bias_analysis.png
+2025-07-30 15:46:35,365 - __main__ - INFO -   - haig_comprehensive_analysis.png
+2025-07-30 15:46:35,365 - __main__ - INFO -   - haig_pivot_based_comprehensive_analysis.png

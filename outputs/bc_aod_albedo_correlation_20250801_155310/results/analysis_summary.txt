@@ -1,0 +1,25 @@
+Black Carbon AOD vs MODIS Albedo Correlation Analysis
+=======================================================
+
+Analysis Date: 2025-08-01 15:53:18
+
+Dataset Information:
+- Total paired observations: 292
+- Time period: June-September 2022-2024
+- Location: Haig Glacier
+
+Overall Correlation Results:
+- Pearson correlation: -0.2135 (p = 0.0002)
+- Spearman correlation: -0.2408 (p = 0.0000)
+- R-squared: 0.0456
+- 95% CI for Pearson r: [-0.3205, -0.1012]
+
+Variable Statistics:
+- BC AOD (Regional): 0.0145 ± 0.0183
+- MODIS Albedo: 0.2823 ± 0.1189
+
+Seasonal Results:
+- June: r = -0.263 (p = 0.116, n = 37)
+- July: r = -0.302 (p = 0.004, n = 88)
+- August: r = -0.340 (p = 0.001, n = 93)
+- September: r = -0.139 (p = 0.238, n = 74)

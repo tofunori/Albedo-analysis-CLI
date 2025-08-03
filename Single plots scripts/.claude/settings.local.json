@@ -4,7 +4,8 @@
       "Bash(mv:*)",
       "Bash(cp:*)",
       "Bash(conda install:*)",
-      "Bash(python:*)"
+      "Bash(python:*)",
+      "mcp__context7__get-library-docs"
     ],
     "deny": []
   }

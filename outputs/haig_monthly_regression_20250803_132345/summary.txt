@@ -1,0 +1,82 @@
+
+Monthly baseline (no precip): Albedo ~ Temperature + AOD
+--------------------------------------------------------
+n = 91, R^2 = 0.301, adj. R^2 = 0.285
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.646414     0.038989       16.580            0
+  Temperature     -0.012568     0.004467       -2.813      0.00604
+  BC_AOD          -6.921225     1.808389       -3.827     0.000242
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.205
+  BC_AOD       VIF = 1.205
+
+Monthly regression: Albedo ~ Temperature + BC_AOD
+--------------------------------------------------
+n = 91, R^2 = 0.301, adj. R^2 = 0.285
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.646414     0.038989       16.580            0
+  Temperature     -0.012568     0.004467       -2.813      0.00604
+  BC_AOD          -6.921225     1.808389       -3.827     0.000242
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.205
+  BC_AOD       VIF = 1.205
+
+Monthly standardized coefficients (predictors z-scored)
+-------------------------------------------------------
+n = 91, R^2 = 0.301, adj. R^2 = 0.285
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.471208     0.013563       34.742            0
+  Temperature_z    -0.042123     0.014972       -2.813      0.00604
+  BC_AOD_z        -0.057302     0.014972       -3.827     0.000242
+
+Influence check (Cook's distance) – monthly additive model
+----------------------------------------------------------
+n = 91, R^2 = 0.301, adj. R^2 = 0.285
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.646414     0.038989       16.580            0
+  Temperature     -0.012568     0.004467       -2.813      0.00604
+  BC_AOD          -6.921225     1.808389       -3.827     0.000242
+
+Cook's distance: threshold = 4/n = 0.044
+High-influence indices (0-based) = [66, 67, 71, 76]
+High-influence months = ['2018-08', '2018-09', '2019-09', '2021-07']
+
+Monthly additive model refit (excluding high Cook's D)
+------------------------------------------------------
+n = 87, R^2 = 0.365, adj. R^2 = 0.350
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.694961     0.038421       18.088            0
+  Temperature     -0.015706     0.004338       -3.620     0.000502
+  BC_AOD          -8.863333     2.153896       -4.115        9e-05
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.169
+  BC_AOD       VIF = 1.169
+
+LMG relative importance (monthly additive model)
+--------------------------------------------------
+n = 91, R^2 = 0.301, adj. R^2 = 0.285
+
+Relative importance (LMG, monthly):
+  BC_AOD        ΔR² = 0.177 | share = 58.9%
+  Temperature   ΔR² = 0.124 | share = 41.1%
+
+Partial R² by predictor (monthly additive model)
+--------------------------------------------------
+n = 91, R^2 = 0.301, adj. R^2 = 0.285
+
+Partial R² (monthly):
+  Temperature   partial R² = 0.063
+  BC_AOD        partial R² = 0.116

@@ -1,0 +1,50 @@
+# Haig Trend Analysis Analysis
+
+## Analysis Description
+
+Non-parametric trend analysis of Haig glacier albedo (2002-2024)
+
+## Analysis Metadata
+
+- **Generated**: 2025-08-03T10:29:38.349589
+- **Analysis Type**: haig_trend_analysis
+- **Output Directory**: `haig_trend_analysis_20250803_102938`
+
+## Directory Structure
+
+```
+haig_trend_analysis_20250803_102938/
+├── plots/          # Generated visualizations
+├── results/        # Statistical outputs and summaries
+└── README.md       # This documentation
+```
+
+## Key Findings
+
+1. AWS albedo shows no significant trend (p=0.913)
+
+## Generated Files
+
+### Plots
+- `haig_correlations_analysis.png`
+- `haig_trends_analysis.png`
+
+### Results
+- `summary.txt`
+
+## Additional Information
+
+**Analysis Period**: 2002-2024 (based on available data)
+
+**Methodology**: Non-parametric Mann-Kendall trend test and Sen slope estimator
+
+**Statistical Significance**: alpha = 0.05 (95% confidence level)
+
+**Data Sources**: AWS measurements and MODIS satellite observations
+
+**Quality Control**: Minimum 5 years of data required
+
+**Reference**: Based on methodology from Williamson et al. (2021)
+
+**Seasonal Definition**: Melt season months: [6, 7, 8, 9]; aggregation: mean
+

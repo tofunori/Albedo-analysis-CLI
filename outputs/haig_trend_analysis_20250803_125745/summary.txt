@@ -1,0 +1,145 @@
+
+Baseline model (no precip): Albedo ~ Temperature + BC_AOD
+---------------------------------------------------------
+n = 23, R^2 = 0.579, adj. R^2 = 0.537
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.959529     0.125929        7.620     2.45e-07
+  Temperature     -0.052474     0.015752       -3.331      0.00333
+  BC_AOD          -4.192604     3.487778       -1.202        0.243
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.581
+  BC_AOD       VIF = 1.581
+
+Multiple regression: Albedo ~ Temperature + BC_AOD + Rainfall
+-------------------------------------------------------------
+n = 23, R^2 = 0.593, adj. R^2 = 0.529
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +1.061227     0.179420        5.915     1.08e-05
+  Temperature     -0.056871     0.016811       -3.383      0.00312
+  BC_AOD          -4.099247     3.521114       -1.164        0.259
+  Rainfall        -0.025979     0.032360       -0.803        0.432
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.769
+  BC_AOD       VIF = 1.583
+  Rainfall     VIF = 1.168
+
+Extended vs Baseline comparison
+--------------------------------------------------
+n = 23, R^2 = 0.593, adj. R^2 = 0.529
+
+Model comparison (Extended vs Baseline):
+  Δadj R² = -0.008 (Extended: 0.529, Baseline: 0.537)
+  ΔAIC = +1.23 (lower is better)
+  ΔBIC = +2.37 (lower is better)
+  Nested F-test: F = 0.645, p = 0.432 (tests if added terms improve fit)
+
+Standardized coefficients (predictors z-scored)
+--------------------------------------------------
+n = 23, R^2 = 0.593, adj. R^2 = 0.529
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.449754     0.013651       32.946            0
+  Temperature_z    -0.062797     0.018563       -3.383      0.00312
+  BC_AOD_z        -0.020443     0.017560       -1.164        0.259
+  Rainfall_z      -0.012109     0.015083       -0.803        0.432
+
+Influence check (Cook's distance) for additive model
+----------------------------------------------------
+n = 23, R^2 = 0.593, adj. R^2 = 0.529
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +1.061227     0.179420        5.915     1.08e-05
+  Temperature     -0.056871     0.016811       -3.383      0.00312
+  BC_AOD          -4.099247     3.521114       -1.164        0.259
+  Rainfall        -0.025979     0.032360       -0.803        0.432
+
+Cook's distance: threshold = 4/n = 0.174
+High-influence indices (0-based) = [19, 21]
+
+Additive model refit (excluding high Cook's D)
+--------------------------------------------------
+n = 21, R^2 = 0.566, adj. R^2 = 0.490
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +1.031758     0.183598        5.620     3.06e-05
+  Temperature     -0.057378     0.016095       -3.565      0.00238
+  BC_AOD          -3.536163     3.853466       -0.918        0.372
+  Rainfall        -0.013587     0.032866       -0.413        0.684
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.486
+  BC_AOD       VIF = 1.320
+  Rainfall     VIF = 1.330
+
+Centered interaction (controls: none beyond T and BC): Albedo ~ T_c + B_c + T_c×B_c
+-----------------------------------------------------------------------------------
+n = 23, R^2 = 0.614, adj. R^2 = 0.553
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.437550     0.016185       27.034            0
+  T_c             -0.047255     0.015965       -2.960      0.00804
+  B_c             -7.172219     4.101713       -1.749       0.0965
+  T_c×B_c         +3.821951     2.895300        1.320        0.203
+
+Variance Inflation Factors (VIF):
+  T_c          VIF = 1.684
+  B_c          VIF = 2.268
+  Txc          VIF = 1.467
+
+Robustness: trimmed windows (drop first 3 years, baseline predictors)
+---------------------------------------------------------------------
+n = 20, R^2 = 0.537, adj. R^2 = 0.482
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.933265     0.143528        6.502     5.42e-06
+  Temperature     -0.049343     0.017709       -2.786       0.0127
+  BC_AOD          -4.386070     3.755181       -1.168        0.259
+
+Robustness: trimmed windows (drop last 3 years, baseline predictors)
+--------------------------------------------------------------------
+n = 20, R^2 = 0.516, adj. R^2 = 0.459
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.926947     0.133962        6.920     2.48e-06
+  Temperature     -0.050015     0.017071       -2.930      0.00935
+  BC_AOD          -2.326202     3.773356       -0.616        0.546
+
+Robustness: median annual aggregation (JJAS, baseline predictors)
+-----------------------------------------------------------------
+n = 23, R^2 = 0.666, adj. R^2 = 0.632
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +1.169905     0.121802        9.605      6.2e-09
+  Temperature     -0.064464     0.016725       -3.854     0.000989
+  BC_AOD         -23.944457    16.333608       -1.466        0.158
+
+LMG relative importance (additive model)
+--------------------------------------------------
+n = 23, R^2 = 0.593, adj. R^2 = 0.529
+
+Relative importance (LMG): average ΔR² over all entry orders
+  Temperature  ΔR² = 0.393  |  share = 66.3%
+  BC_AOD       ΔR² = 0.183  |  share = 30.9%
+  Rainfall     ΔR² = 0.017  |  share = 2.8%
+
+Partial R² by predictor (additive model)
+--------------------------------------------------
+n = 23, R^2 = 0.593, adj. R^2 = 0.529
+
+Partial R² (unique contribution):
+  Temperature  partial R² = 0.245
+  BC_AOD       partial R² = 0.029
+  Rainfall     partial R² = 0.014

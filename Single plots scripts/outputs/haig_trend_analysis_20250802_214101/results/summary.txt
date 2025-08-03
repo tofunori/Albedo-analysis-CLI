@@ -1,0 +1,34 @@
+Analysis Summary: haig_trend_analysis
+============================================================
+
+Generated: 2025-08-02T21:41:08.294804
+Analysis Type: Sen Slope and Mann-Kendall Trend Analysis
+Output Directory: outputs\haig_trend_analysis_20250802_214101
+
+Configuration:
+--------------------
+trend_analysis_alpha: 0.05
+seasonal_analysis: True
+prewhitening: True
+min_years: 5
+methods: ['MCD43A3', 'MOD09GA', 'MOD10A1']
+
+Data Processing:
+--------------------
+total_time_series: 2
+significant_trends: 0
+analysis_period: 2002-2024
+
+Key Results:
+--------------------
+albedo_trend_direction: no trend
+temperature_trend_direction: no trend
+albedo_change_per_year: 0.0070
+temperature_change_per_year: 0.0385
+
+Output Files:
+--------------------
+Plots:
+  - haig_sen_slope_mann_kendall_trends.png
+Results:
+  - summary.txt

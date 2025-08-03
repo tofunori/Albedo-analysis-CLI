@@ -1,0 +1,70 @@
+
+Multiple regression: Albedo ~ Temperature + BC_AOD
+--------------------------------------------------
+n = 23, R^2 = 0.579, adj. R^2 = 0.537
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.959529     0.125929        7.620     2.45e-07
+  Temperature     -0.052474     0.015752       -3.331      0.00333
+  BC_AOD          -4.192604     3.487778       -1.202        0.243
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.581
+  BC_AOD       VIF = 1.581
+
+Standardized coefficients (predictors z-scored)
+--------------------------------------------------
+n = 23, R^2 = 0.579, adj. R^2 = 0.537
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.449754     0.013529       33.243            0
+  Temperature_z    -0.057942     0.017394       -3.331      0.00333
+  BC_AOD_z        -0.020909     0.017394       -1.202        0.243
+
+Interaction model: Albedo ~ Temperature + BC_AOD + Temperature×BC_AOD
+---------------------------------------------------------------------
+n = 23, R^2 = 0.614, adj. R^2 = 0.553
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +1.236480     0.243531        5.077     6.69e-05
+  Temperature     -0.081637     0.026969       -3.027      0.00693
+  BC_AOD         -41.554574    28.509831       -1.458        0.161
+  Temp×BC         +3.821951     2.895300        1.320        0.203
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 4.806
+  BC_AOD       VIF = 109.561
+  Temp_x_BC    VIF = 134.831
+
+Robustness: trimmed windows (drop first 3 years; drop last 3 years)
+-------------------------------------------------------------------
+n = 20, R^2 = 0.537, adj. R^2 = 0.482
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.933265     0.143528        6.502     5.42e-06
+  Temperature     -0.049343     0.017709       -2.786       0.0127
+  BC_AOD          -4.386070     3.755181       -1.168        0.259
+
+Robustness: trimmed windows (drop last 3 years)
+--------------------------------------------------
+n = 20, R^2 = 0.516, adj. R^2 = 0.459
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.926947     0.133962        6.920     2.48e-06
+  Temperature     -0.050015     0.017071       -2.930      0.00935
+  BC_AOD          -2.326202     3.773356       -0.616        0.546
+
+Robustness: median annual aggregation (JJAS)
+--------------------------------------------------
+n = 23, R^2 = 0.666, adj. R^2 = 0.632
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +1.169905     0.121802        9.605      6.2e-09
+  Temperature     -0.064464     0.016725       -3.854     0.000989
+  BC_AOD         -23.944457    16.333608       -1.466        0.158
