@@ -1,0 +1,116 @@
+
+Monthly baseline (no precip): Albedo ~ Temperature + AOD
+--------------------------------------------------------
+n = 92, R^2 = 0.433, adj. R^2 = 0.421
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.514987     0.017469       29.480            0
+  Temperature     -0.042772     0.007483       -5.716     1.43e-07
+  BC_AOD          -3.684253     2.386241       -1.544        0.126
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.504
+  BC_AOD       VIF = 1.504
+
+Monthly regression: Albedo ~ Temperature + Precipitation + BC_AOD
+-----------------------------------------------------------------
+n = 92, R^2 = 0.522, adj. R^2 = 0.506
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.470818     0.019480       24.170            0
+  Temperature     -0.029191     0.007683       -3.800     0.000266
+  Precipitation    +0.001340     0.000331        4.045     0.000112
+  BC_AOD          -9.092748     2.577462       -3.528     0.000668
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.859
+  Precipitation VIF = 1.395
+  BC_AOD       VIF = 2.058
+
+Monthly regression: Albedo ~ Temperature + Precipitation + BC_AOD (HAC Newey–West, lag=2)
+-----------------------------------------------------------------
+
+Coefficients (same beta), HAC SE and p:
+  term            coef         SE(HAC)      p(HAC)
+  Intercept       +0.470818     0.019390            0
+  Temperature     -0.029191     0.007592     0.000121
+  Precipitation    +0.001340     0.000436       0.0021
+  BC_AOD          -9.092748     2.412370     0.000164
+
+Monthly: Extended vs Baseline
+--------------------------------------------------
+n = 92, R^2 = 0.522, adj. R^2 = 0.506
+
+Model comparison (Extended vs Baseline):
+  Δadj R² = +0.085
+  ΔAIC = -13.69 (lower is better)
+  ΔBIC = -11.17 (lower is better)
+  Nested F-test: F = 16.365, p = 0.000
+
+Monthly standardized coefficients (predictors z-scored)
+-------------------------------------------------------
+n = 92, R^2 = 0.522, adj. R^2 = 0.506
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.387608     0.005949       65.158            0
+  Temperature_z    -0.030986     0.008155       -3.800     0.000266
+  Precipitation_z    +0.028582     0.007065        4.045     0.000112
+  BC_AOD_z        -0.030268     0.008580       -3.528     0.000668
+
+Influence check (Cook's distance) – monthly additive model
+----------------------------------------------------------
+n = 92, R^2 = 0.522, adj. R^2 = 0.506
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.470818     0.019480       24.170            0
+  Temperature     -0.029191     0.007683       -3.800     0.000266
+  Precipitation    +0.001340     0.000331        4.045     0.000112
+  BC_AOD          -9.092748     2.577462       -3.528     0.000668
+
+Cook's distance: threshold = 4/n = 0.043
+High-influence indices (0-based) = [11, 51, 64]
+High-influence months = ['2004-09', '2014-09', '2018-06']
+
+Monthly additive model refit (excluding high Cook's D)
+------------------------------------------------------
+n = 89, R^2 = 0.553, adj. R^2 = 0.537
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.451046     0.019697       22.899            0
+  Temperature     -0.021171     0.007678       -2.757      0.00713
+  Precipitation    +0.001748     0.000368        4.757     7.94e-06
+  BC_AOD         -11.826739     2.583184       -4.578     1.59e-05
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.968
+  Precipitation VIF = 1.442
+  BC_AOD       VIF = 2.158
+
+Residual autocorrelation (Durbin–Watson)
+--------------------------------------------------
+n = 92, R^2 = 0.522, adj. R^2 = 0.506
+
+DW = 1.439 (≈2 indique faible autocorrélation)
+
+LMG relative importance (monthly additive model)
+--------------------------------------------------
+n = 92, R^2 = 0.522, adj. R^2 = 0.506
+
+Relative importance (LMG, monthly):
+  Temperature   ΔR² = 0.263 | share = 50.4%
+  BC_AOD        ΔR² = 0.161 | share = 30.9%
+  Precipitation ΔR² = 0.098 | share = 18.8%
+
+Partial R² by predictor (monthly additive model)
+--------------------------------------------------
+n = 92, R^2 = 0.522, adj. R^2 = 0.506
+
+Partial R² (monthly):
+  Temperature   partial R² = 0.078
+  Precipitation partial R² = 0.089
+  BC_AOD        partial R² = 0.068

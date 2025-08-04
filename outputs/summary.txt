@@ -112,3 +112,96 @@ Sensitivity notes:
 -------------------
 Sensitivity JAS: slope=-0.0079 units/yr, p=0.042
 Sensitivity median: slope=-0.0094 units/yr, p=0.080
+August trends by altitude band (paper-style)
+--------------------------------------------------
+Month = 8, Snow & Ice threshold (glacier_fraction) ≥ 0.50
+Median elevation (approx.) = 3082.0 m
+
+Edge Effects (all QC pixels):
+  >Median   Sen slope = NA /yr  | MK p = NA | n_years = 0
+  Median    Sen slope = -0.005 /yr  | MK p = +0.159 | n_years = 23
+  <Median   Sen slope = NA /yr  | MK p = NA | n_years = 0
+
+Snow & Ice (edge-free):
+  >Median   Sen slope = NA /yr  | MK p = NA | n_years = 0
+  Median    Sen slope = -0.005 /yr  | MK p = +0.159 | n_years = 23
+  <Median   Sen slope = NA /yr  | MK p = NA | n_years = 0
+
+
+Trend statistics by series:
+-----------------------------
+Temperature:
+  n = 23, duration = 22.0 years
+  Kendall tau = 0.307, p = 0.048 (PW)
+  Sen slope = +0.0868 per year
+  95% CI = [+0.0149, +0.1482]
+  Trend = increasing (significant)
+
+Bc Aod:
+  n = 23, duration = 22.0 years
+  Kendall tau = 0.403, p = 0.009 (PW)
+  Sen slope = +0.0002 per year
+  95% CI = [+0.0000, +0.0005]
+  Trend = increasing (significant)
+
+Modis Mod09Ga:
+  n = 23, duration = 22.0 years
+  Kendall tau = -0.169, p = 0.284 (PW)
+  Sen slope = -0.0027 per year
+  95% CI = [-0.0049, -0.0002]
+  Trend = no trend (not significant)
+
+Sensitivity notes:
+-------------------
+Sensitivity JAS: slope=-0.0032 units/yr, p=0.259
+Sensitivity median: slope=-0.0024 units/yr, p=0.284
+August trends by altitude band (paper-style)
+--------------------------------------------------
+Month = 8, Snow & Ice threshold (glacier_fraction) ≥ 0.50
+Median elevation (approx.) = 2728.0 m
+
+Edge Effects (all QC pixels):
+  >Median   Sen slope = NA /yr  | MK p = NA | n_years = 0
+  Median    Sen slope = -0.004 /yr  | MK p = +0.693 | n_years = 23
+  <Median   Sen slope = NA /yr  | MK p = NA | n_years = 0
+
+Snow & Ice (edge-free):
+  >Median   Sen slope = NA /yr  | MK p = NA | n_years = 0
+  Median    Sen slope = -0.004 /yr  | MK p = +0.693 | n_years = 23
+  <Median   Sen slope = NA /yr  | MK p = NA | n_years = 0
+
+
+Trend statistics by series:
+-----------------------------
+Aws Albedo:
+  n = 14, duration = 13.0 years
+  Kendall tau = 0.333, p = 0.127 (PW)
+  Sen slope = +0.0003 per year
+  95% CI = [-0.0059, +0.0091]
+  Trend = no trend (not significant)
+
+Temperature:
+  n = 23, duration = 22.0 years
+  Kendall tau = 0.368, p = 0.018 (PW)
+  Sen slope = +0.0828 per year
+  95% CI = [+0.0183, +0.1506]
+  Trend = increasing (significant)
+
+Bc Aod:
+  n = 23, duration = 22.0 years
+  Kendall tau = 0.377, p = 0.015 (PW)
+  Sen slope = +0.0003 per year
+  95% CI = [+0.0001, +0.0005]
+  Trend = increasing (significant)
+
+Modis Mod09Ga:
+  n = 23, duration = 22.0 years
+  Kendall tau = -0.377, p = 0.015 (PW)
+  Sen slope = -0.0087 per year
+  95% CI = [-0.0152, -0.0028]
+  Trend = decreasing (significant)
+
+Sensitivity notes:
+-------------------
+Sensitivity JAS: slope=-0.0079 units/yr, p=0.042
+Sensitivity median: slope=-0.0094 units/yr, p=0.080

@@ -1,0 +1,106 @@
+
+Monthly baseline (no precip): Albedo ~ Temperature + AOD
+--------------------------------------------------------
+n = 92, R^2 = 0.433, adj. R^2 = 0.421
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.514987     0.017469       29.480            0
+  Temperature     -0.042772     0.007483       -5.716     1.43e-07
+  BC_AOD          -3.684253     2.386241       -1.544        0.126
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.504
+  BC_AOD       VIF = 1.504
+
+Monthly regression: Albedo ~ Temperature + Precipitation + BC_AOD
+-----------------------------------------------------------------
+n = 92, R^2 = 0.441, adj. R^2 = 0.422
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.492153     0.027412       17.954            0
+  Temperature     -0.034380     0.010782       -3.189      0.00198
+  Precipitation    +0.000798     0.000739        1.080        0.283
+  BC_AOD          -5.305772     2.817210       -1.883        0.063
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 3.128
+  Precipitation VIF = 2.081
+  BC_AOD       VIF = 2.100
+
+Monthly: Extended vs Baseline
+--------------------------------------------------
+n = 92, R^2 = 0.441, adj. R^2 = 0.422
+
+Model comparison (Extended vs Baseline):
+  Δadj R² = +0.001
+  ΔAIC = +0.79 (lower is better)
+  ΔBIC = +3.31 (lower is better)
+  Nested F-test: F = 1.167, p = 0.283
+
+Monthly standardized coefficients (predictors z-scored)
+-------------------------------------------------------
+n = 92, R^2 = 0.441, adj. R^2 = 0.422
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.387608     0.006436       60.228            0
+  Temperature_z    -0.036494     0.011445       -3.189      0.00198
+  Precipitation_z    +0.010084     0.009335        1.080        0.283
+  BC_AOD_z        -0.017662     0.009378       -1.883        0.063
+
+Influence check (Cook's distance) – monthly additive model
+----------------------------------------------------------
+n = 92, R^2 = 0.441, adj. R^2 = 0.422
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.492153     0.027412       17.954            0
+  Temperature     -0.034380     0.010782       -3.189      0.00198
+  Precipitation    +0.000798     0.000739        1.080        0.283
+  BC_AOD          -5.305772     2.817210       -1.883        0.063
+
+Cook's distance: threshold = 4/n = 0.043
+High-influence indices (0-based) = [11, 23, 91]
+High-influence months = ['2004-09', '2007-09', '2024-09']
+
+Monthly additive model refit (excluding high Cook's D)
+------------------------------------------------------
+n = 89, R^2 = 0.428, adj. R^2 = 0.408
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.474092     0.027552       17.207            0
+  Temperature     -0.024924     0.011627       -2.144       0.0349
+  Precipitation    +0.001217     0.000764        1.592        0.115
+  BC_AOD          -8.617836     3.803978       -2.265        0.026
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 3.672
+  Precipitation VIF = 2.382
+  BC_AOD       VIF = 2.444
+
+Residual autocorrelation (Durbin–Watson)
+--------------------------------------------------
+n = 92, R^2 = 0.441, adj. R^2 = 0.422
+
+DW = 1.340 (≈2 indique faible autocorrélation)
+
+LMG relative importance (monthly additive model)
+--------------------------------------------------
+n = 92, R^2 = 0.441, adj. R^2 = 0.422
+
+Relative importance (LMG, monthly):
+  Temperature   ΔR² = 0.242 | share = 54.8%
+  BC_AOD        ΔR² = 0.124 | share = 28.2%
+  Precipitation ΔR² = 0.075 | share = 17.0%
+
+Partial R² by predictor (monthly additive model)
+--------------------------------------------------
+n = 92, R^2 = 0.441, adj. R^2 = 0.422
+
+Partial R² (monthly):
+  Temperature   partial R² = 0.065
+  Precipitation partial R² = 0.007
+  BC_AOD        partial R² = 0.023

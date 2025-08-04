@@ -1,0 +1,31 @@
+Analysis Summary: haig_trend_analysis
+============================================================
+
+Generated: 2025-08-04T10:28:22.637926
+Analysis Type: Sen Slope and Mann-Kendall Trend Analysis
+Output Directory: outputs\haig_trend_analysis_20250804_102816
+
+Configuration:
+--------------------
+trend_analysis_alpha: 0.05
+seasonal_analysis: True
+prewhitening: True
+min_years: 5
+methods: ['MOD09GA']
+season_months: [6, 7, 8, 9]
+annual_agg: mean
+weighted_annual: False
+
+Data Processing:
+--------------------
+total_time_series: 4
+significant_trends: 3
+analysis_period: 2002-2024
+
+Output Files:
+--------------------
+Plots:
+  - haig_correlations_analysis.png
+  - haig_trends_analysis.png
+Results:
+  - summary.txt

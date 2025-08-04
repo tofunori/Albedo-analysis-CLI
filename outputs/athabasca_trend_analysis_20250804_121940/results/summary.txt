@@ -1,0 +1,31 @@
+Analysis Summary: athabasca_trend_analysis
+============================================================
+
+Generated: 2025-08-04T12:19:56.676898
+Analysis Type: Sen Slope and Mann-Kendall Trend Analysis
+Output Directory: outputs\athabasca_trend_analysis_20250804_121940
+
+Configuration:
+--------------------
+trend_analysis_alpha: 0.05
+seasonal_analysis: True
+prewhitening: True
+min_years: 5
+methods: ['MOD09GA']
+season_months: [6, 7, 8, 9]
+annual_agg: mean
+weighted_annual: False
+
+Data Processing:
+--------------------
+total_time_series: 3
+significant_trends: 2
+analysis_period: 2002-2024
+
+Output Files:
+--------------------
+Plots:
+  - athabasca_correlations_analysis.png
+  - athabasca_trends_analysis.png
+Results:
+  - summary.txt
