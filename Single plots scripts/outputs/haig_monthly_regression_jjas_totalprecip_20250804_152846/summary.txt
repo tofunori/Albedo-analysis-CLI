@@ -1,0 +1,107 @@
+
+Monthly baseline (no precip): Albedo ~ Temperature + AOD
+--------------------------------------------------------
+n = 91, R^2 = 0.301, adj. R^2 = 0.285
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.646414     0.038989       16.580            0
+  Temperature     -0.012568     0.004467       -2.813      0.00604
+  BC_AOD          -6.921225     1.808389       -3.827     0.000242
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.205
+  BC_AOD       VIF = 1.205
+
+Monthly regression: Albedo ~ Temperature + Precipitation + BC_AOD
+-----------------------------------------------------------------
+n = 91, R^2 = 0.326, adj. R^2 = 0.302
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.561282     0.061415        9.139     2.33e-14
+  Temperature     -0.009756     0.004687       -2.081       0.0403
+  Precipitation    +0.000643     0.000362        1.780       0.0786
+  BC_AOD          -6.780335     1.788276       -3.792     0.000276
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.360
+  Precipitation VIF = 1.173
+  BC_AOD       VIF = 1.207
+
+Monthly: Extended vs Baseline
+--------------------------------------------------
+n = 91, R^2 = 0.326, adj. R^2 = 0.302
+
+Model comparison (Extended vs Baseline):
+  Δadj R² = +0.017
+  ΔAIC = -1.25 (lower is better)
+  ΔBIC = +1.26 (lower is better)
+  Nested F-test: F = 3.167, p = 0.079
+
+Monthly standardized coefficients (predictors z-scored)
+-------------------------------------------------------
+n = 91, R^2 = 0.326, adj. R^2 = 0.302
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.471208     0.013399       35.167            0
+  Temperature_z    -0.032699     0.015710       -2.081       0.0403
+  Precipitation_z    +0.025966     0.014590        1.780       0.0786
+  BC_AOD_z        -0.056135     0.014805       -3.792     0.000276
+
+Influence check (Cook's distance) – monthly additive model
+----------------------------------------------------------
+n = 91, R^2 = 0.326, adj. R^2 = 0.302
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.561282     0.061415        9.139     2.33e-14
+  Temperature     -0.009756     0.004687       -2.081       0.0403
+  Precipitation    +0.000643     0.000362        1.780       0.0786
+  BC_AOD          -6.780335     1.788276       -3.792     0.000276
+
+Cook's distance: threshold = 4/n = 0.044
+High-influence indices (0-based) = [57, 66, 71, 76]
+High-influence months = ['2016-07', '2018-08', '2019-09', '2021-07']
+
+Monthly additive model refit (excluding high Cook's D)
+------------------------------------------------------
+n = 87, R^2 = 0.394, adj. R^2 = 0.372
+
+Coefficients:
+  term            coef         SE           t           p
+  Intercept       +0.577463     0.058533        9.866     1.33e-15
+  Temperature     -0.010040     0.004439       -2.262       0.0263
+  Precipitation    +0.000770     0.000342        2.250       0.0271
+  BC_AOD          -9.182693     2.107022       -4.358     3.73e-05
+
+Variance Inflation Factors (VIF):
+  Temperature  VIF = 1.340
+  Precipitation VIF = 1.184
+  BC_AOD       VIF = 1.175
+
+Diagnostics résiduels avancés
+--------------------------------------------------
+n = 91, R^2 = 0.326, adj. R^2 = 0.302
+
+DW = 1.704 (≈2 indique faible autocorrélation)
+Breusch-Pagan: LM=1.377, p=0.245 (hétéroscédasticité)
+
+LMG relative importance (monthly additive model)
+--------------------------------------------------
+n = 91, R^2 = 0.326, adj. R^2 = 0.302
+
+Relative importance (LMG, monthly):
+  BC_AOD        ΔR² = 0.167 | share = 51.4%
+  Temperature   ΔR² = 0.102 | share = 31.2%
+  Precipitation ΔR² = 0.057 | share = 17.4%
+
+Partial R² by predictor (monthly additive model)
+--------------------------------------------------
+n = 91, R^2 = 0.326, adj. R^2 = 0.302
+
+Partial R² (monthly):
+  Temperature   partial R² = 0.034
+  Precipitation partial R² = 0.025
+  BC_AOD        partial R² = 0.111

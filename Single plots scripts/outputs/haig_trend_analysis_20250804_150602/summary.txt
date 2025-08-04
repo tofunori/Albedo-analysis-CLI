@@ -1,0 +1,93 @@
+Comprehensive Analysis Report: Haig Trend Analysis
+================================================================================
+
+Generated: 2025-08-04T15:06:14.866367
+Analysis Type: Sen Slope and Mann-Kendall Trend Analysis
+Glacier: Haig Glacier, Canadian Rocky Mountains
+Output Directory: haig_trend_analysis_20250804_150602
+Analysis Period: 2002-2024 (based on available data)
+
+Configuration:
+--------------------
+trend_analysis_alpha: 0.05
+seasonal_analysis: True
+prewhitening: True
+min_years: 5
+methods: ['MOD09GA']
+season_months: [6, 7, 8, 9]
+annual_agg: mean
+weighted_annual: False
+methodology: Mann–Kendall trend test (optional Yue–Pilon prewhitening) and Sen slope estimator
+statistical_significance_level: alpha = 0.05 (95% confidence level)
+data_sources: AWS measurements and MODIS satellite observations
+quality_control: Minimum 5 years of data required
+
+Data Processing:
+--------------------
+total_time_series: 4
+significant_trends: 3
+analysis_period: 2002-2024 (based on available data)
+seasonal_definition: Melt season months: [6, 7, 8, 9]; aggregation: mean
+
+Detailed Trend Statistics:
+----------------------------------------
+Aws Albedo:
+  Observations: 14, Duration: 13.0 years
+  Kendall tau: 0.333, p-value: 0.127 (prewhitened)
+  Sen slope: +0.0003 per year
+  95% CI: [-0.0059, +0.0091]
+  Trend: no trend (not significant)
+
+Temperature:
+  Observations: 23, Duration: 22.0 years
+  Kendall tau: 0.368, p-value: 0.018 (prewhitened)
+  Sen slope: +0.0828 per year
+  95% CI: [+0.0183, +0.1506]
+  Trend: increasing (significant)
+
+Bc Aod:
+  Observations: 23, Duration: 22.0 years
+  Kendall tau: 0.377, p-value: 0.015 (prewhitened)
+  Sen slope: +0.0003 per year
+  95% CI: [+0.0001, +0.0005]
+  Trend: increasing (significant)
+
+Modis Mod09Ga:
+  Observations: 23, Duration: 22.0 years
+  Kendall tau: -0.377, p-value: 0.015 (prewhitened)
+  Sen slope: -0.0087 per year
+  95% CI: [-0.0152, -0.0028]
+  Trend: decreasing (significant)
+
+
+Sensitivity Analysis:
+------------------------------
+• Sensitivity JAS: slope=-0.0079 units/yr, p=0.042
+• Sensitivity median: slope=-0.0094 units/yr, p=0.080
+
+Altitude Band Analysis:
+------------------------------
+August Trends by Altitude Band (Paper-style Analysis)
+============================================================
+Month: 8, Snow & Ice threshold (glacier_fraction) ≥ 0.50
+Median elevation: 2728.0 m
+
+Edge Effects (all QC pixels):
+  >Median   Sen slope = NA/yr  |  MK p = NA  |  n_years = 0
+  Median    Sen slope = -0.004/yr  |  MK p = +0.693  |  n_years = 23
+  <Median   Sen slope = NA/yr  |  MK p = NA  |  n_years = 0
+
+Snow & Ice (edge-free pixels):
+  >Median   Sen slope = NA/yr  |  MK p = NA  |  n_years = 0
+  Median    Sen slope = -0.004/yr  |  MK p = +0.693  |  n_years = 23
+  <Median   Sen slope = NA/yr  |  MK p = NA  |  n_years = 0
+
+Generated Output Files:
+------------------------------
+Visualizations:
+  • haig_correlations_analysis.png
+  • haig_trends_analysis.png
+
+
+Report generated on: 2025-08-04T15:06:14.866367
+Total analysis duration: 2002-2024 (based on available data)

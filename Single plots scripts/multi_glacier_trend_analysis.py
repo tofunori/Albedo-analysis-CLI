@@ -19,7 +19,7 @@ Change CURRENT_GLACIER variable to switch between glaciers
 # =============================================================================
 # GLACIER SELECTION - Change this to switch glaciers
 # =============================================================================
-CURRENT_GLACIER = 'coropuna'  # Options: 'haig', 'athabasca', 'coropuna'
+CURRENT_GLACIER = 'haig'  # Options: 'haig', 'athabasca', 'coropuna'
 
 # =============================================================================
 # GLACIER CONFIGURATIONS

@@ -16,51 +16,15 @@ Change CURRENT_GLACIER variable to switch between glaciers
 # =============================================================================
 # GLACIER SELECTION - Change this to switch glaciers
 # =============================================================================
-CURRENT_GLACIER = 'coropuna'  # Options: 'haig', 'athabasca', 'coropuna'
+CURRENT_GLACIER = 'haig'  # Options: 'haig', 'athabasca', 'coropuna'
 
 # =============================================================================
-# GLACIER CONFIGURATIONS
+# GLACIER CONFIGURATIONS - Will be loaded after external config
 # =============================================================================
-GLACIER_CONFIGS = {
-    'haig': {
-        'name': 'Haig Glacier',
-        'region': 'Canadian Rocky Mountains',
-        'aws_coords': {'lat': 50.7186, 'lon': -115.3433, 'name': 'Haig AWS'},
-        'data_paths': {
-            'modis': "D:/Downloads/MODIS_Terra_Aqua_MultiProduct_2002-01-01_to_2025-01-01.csv",
-            'merra2': "D:/Downloads/Haig_Glacier_Climate_JuneSept_Daily_MERRA2_Speciated_AOD - Haig_Glacier_Climate_JuneSept_Daily_MERRA2_Speciated_AOD.csv",
-            'aws': "D:/Documents/Projects/Haig_analysis/data/csv/HaigAWS_daily_2002_2015_gapfilled.csv"
-        },
-        'output_prefix': 'haig'
-    },
-    'athabasca': {
-        'name': 'Athabasca Glacier', 
-        'region': 'Canadian Rocky Mountains',
-        'aws_coords': {'lat': 52.2, 'lon': -117.2, 'name': 'Athabasca Center'},  # approximate coordinates
-        'data_paths': {
-            'modis': "D:/Downloads/Athabasca_MODIS_albedo_2002-01-01_to_2025-01-01.csv",
-            'merra2': "D:/Downloads/Athabasca_JanDecem_Daily_MERRA2_AOD.csv",
-            'aws': None  # No AWS data available
-        },
-        'output_prefix': 'athabasca'
-    },
-    'coropuna': {
-        'name': 'Coropuna Glacier',
-        'region': 'Peruvian Andes', 
-        'aws_coords': {'lat': -15.5, 'lon': -72.7, 'name': 'Coropuna Center'},  # approximate coordinates
-        'data_paths': {
-            'modis': "D:/Downloads/Coropuna_MODIS_albedo_2002-2025.csv",
-            'merra2': "D:/Downloads/Coropuna_Daily_MERRA2_AOD_2002_2025.csv",
-            'aws': None  # No AWS data available
-        },
-        'output_prefix': 'coropuna'
-    }
-}
 
-# Get current glacier configuration
-CURRENT_CONFIG = GLACIER_CONFIGS[CURRENT_GLACIER]
-
+import json
 import logging
+import os
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 import itertools
@@ -78,6 +42,96 @@ except Exception:
     _HAS_SM = False
 
 from output_manager import OutputManager  # provided by your main project
+
+# =============================================================================
+# CONFIG LOADING - External configuration support
+# =============================================================================
+
+def load_external_config() -> Dict[str, Any]:
+    """Load configuration from external config.json file with fallback to environment variables"""
+    config_path = Path(__file__).parent / 'config.json'
+    external_config = {}
+    
+    # Try to load from config.json
+    if config_path.exists():
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                external_config = json.load(f)
+            logging.info(f"Configuration chargée depuis {config_path}")
+        except Exception as e:
+            logging.warning(f"Erreur lors du chargement de config.json: {e}")
+    
+    # Override with environment variables if present
+    data_dir = os.environ.get('GLACIER_DATA_DIR')
+    if data_dir:
+        logging.info(f"Utilisation de GLACIER_DATA_DIR: {data_dir}")
+        # Could implement path building from env vars here
+    
+    return external_config
+
+# Load external configuration
+_EXTERNAL_CONFIG = load_external_config()
+
+# =============================================================================
+# GLACIER CONFIGURATIONS - Dynamic loading with external config support
+# =============================================================================
+
+def build_glacier_configs() -> Dict[str, Dict[str, Any]]:
+    """Build glacier configurations using external config for data paths"""
+    
+    # Default data paths (fallback)
+    default_paths = {
+        'haig': {
+            'modis': "D:/Downloads/MODIS_Terra_Aqua_MultiProduct_2002-01-01_to_2025-01-01.csv",
+            'merra2': "D:/Downloads/Haig_Glacier_Climate_JuneSept_Daily_MERRA2_Speciated_AOD - Haig_Glacier_Climate_JuneSept_Daily_MERRA2_Speciated_AOD.csv",
+            'aws': "D:/Documents/Projects/Haig_analysis/data/csv/HaigAWS_daily_2002_2015_gapfilled.csv"
+        },
+        'athabasca': {
+            'modis': "D:/Downloads/Athabasca_MODIS_albedo_2002-01-01_to_2025-01-01.csv",
+            'merra2': "D:/Downloads/Athabasca_JanDecem_Daily_MERRA2_AOD.csv",
+            'aws': None
+        },
+        'coropuna': {
+            'modis': "D:/Downloads/Coropuna_MODIS_albedo_2002-2025.csv",
+            'merra2': "D:/Downloads/Coropuna_Daily_MERRA2_AOD_2002_2025.csv",
+            'aws': None
+        }
+    }
+    
+    # Get data paths from external config or use defaults
+    external_paths = _EXTERNAL_CONFIG.get('data_paths', {})
+    
+    configs = {
+        'haig': {
+            'name': 'Haig Glacier',
+            'region': 'Canadian Rocky Mountains',
+            'aws_coords': {'lat': 50.7186, 'lon': -115.3433, 'name': 'Haig AWS'},
+            'data_paths': external_paths.get('haig', default_paths['haig']),
+            'output_prefix': 'haig'
+        },
+        'athabasca': {
+            'name': 'Athabasca Glacier', 
+            'region': 'Canadian Rocky Mountains',
+            'aws_coords': {'lat': 52.2, 'lon': -117.2, 'name': 'Athabasca Center'},
+            'data_paths': external_paths.get('athabasca', default_paths['athabasca']),
+            'output_prefix': 'athabasca'
+        },
+        'coropuna': {
+            'name': 'Coropuna Glacier',
+            'region': 'Peruvian Andes', 
+            'aws_coords': {'lat': -15.5, 'lon': -72.7, 'name': 'Coropuna Center'},
+            'data_paths': external_paths.get('coropuna', default_paths['coropuna']),
+            'output_prefix': 'coropuna'
+        }
+    }
+    
+    return configs
+
+# Build glacier configurations
+GLACIER_CONFIGS = build_glacier_configs()
+
+# Get current glacier configuration
+CURRENT_CONFIG = GLACIER_CONFIGS[CURRENT_GLACIER]
 
 # =============================================================================
 # CONFIG - Dynamic based on selected glacier
@@ -765,23 +819,41 @@ def durbin_watson(residuals: np.ndarray) -> float:
     den = np.sum(residuals ** 2)
     return float(num / den) if den > 0 else np.nan
 
+def breusch_pagan_test(resid: np.ndarray, y_hat: np.ndarray) -> Tuple[float, float]:
+    """
+    Breusch-Pagan test for heteroscedasticity
+    Returns: (test_statistic, p_value)
+    """
+    if len(resid) < 5:
+        return np.nan, np.nan
+    
+    # Regress squared residuals on fitted values
+    resid_sq = resid**2
+    X_bp = np.column_stack([np.ones(len(y_hat)), y_hat])
+    
+    try:
+        _, _, _, p_vals, r2_bp, _, _, _ = ols_with_stats(resid_sq, X_bp)
+        # LM test statistic = n * R²
+        lm_stat = len(resid) * r2_bp if np.isfinite(r2_bp) else np.nan
+        p_bp = p_vals[1] if len(p_vals) > 1 else np.nan  # p-value for slope
+        return lm_stat, p_bp
+    except:
+        return np.nan, np.nan
+
 # =============================================================================
-# CORE RUN (single variant)
+# CORE RUN FUNCTIONS (refactored for maintainability)
 # =============================================================================
 
-def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> None:
-    analysis_name = config['output']['analysis_name']
-    if variant_suffix:
-        analysis_name = f"{analysis_name}_{variant_suffix}"
-
-    output_manager = OutputManager(analysis_name, config['output']['base_dir'])
-    run_dir = Path(output_manager.output_dir)
-    logger.info(f"Using run directory: {run_dir}")
-
+def prepare_monthly_data(config: Dict[str, Any]) -> Tuple[pd.DataFrame, List[str], int]:
+    """
+    Prepare and clean monthly datasets for regression
+    Returns: (monthly_dataframe, predictors, n_observations)
+    """
+    logger.info(f"Loading datasets for {CURRENT_CONFIG['name']}...")
+    
+    # Load data
     loader = DataLoader(config)
     selector = PixelSelector(config)
-
-    logger.info(f"Loading datasets for {CURRENT_CONFIG['name']}...")
     modis, aws, temp, precip = loader.load_glacier_data_complete()
     modis_sel = selector.select_best_pixels(modis, CURRENT_GLACIER)
 
@@ -818,9 +890,21 @@ def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> No
     m_bc = monthly_series(ts_bc, 'BC_AOD', 'mean') if not ts_bc.empty else pd.DataFrame()
     m_prec = monthly_series(ts_precip, 'Precipitation', 'sum') if not ts_precip.empty else pd.DataFrame()
 
+    # Check essential datasets before merge
+    if m_alb.empty:
+        raise ValueError("Pas de données d'albedo mensuelles disponibles")
+    if m_temp.empty:
+        raise ValueError("Pas de données de température disponibles")
+    if m_bc.empty:
+        raise ValueError("Pas de données BC_AOD disponibles")
+    
     # Merge monthly on 'date'
     dfm = m_alb[['date', 'Albedo']].merge(m_temp[['date', 'Temperature']], on='date', how='inner') \
                                    .merge(m_bc[['date', 'BC_AOD']], on='date', how='inner')
+    
+    # Check if merge produced empty result
+    if dfm.empty:
+        raise ValueError("Dataset mensuel vide après merge des données essentielles")
     if not m_prec.empty:
         dfm = dfm.merge(m_prec[['date', 'Precipitation']], on='date', how='left')
 
@@ -837,11 +921,38 @@ def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> No
         else:
             predictors = ['Temperature', 'Temperature2', 'BC_AOD']
 
-    dfm = dfm.dropna(subset=['Albedo', 'Temperature', 'BC_AOD']).sort_values('date').reset_index(drop=True)
+    # Dynamic dropna to include all predictors + Albedo (fixes NaN bug)
+    required_cols = ['Albedo'] + predictors
+    dfm = dfm.dropna(subset=required_cols).sort_values('date').reset_index(drop=True)
+    
+    # Check minimum observations for regression
+    n = len(dfm)
+    if n < len(predictors) + 2:
+        raise ValueError(f"Dataset trop petit pour régression: {n} obs, besoin de ≥{len(predictors) + 2}")
+    
+    if n < 24:
+        logger.warning("Fewer than 24 monthly observations; results may be unstable.")
+    
+    return dfm, predictors, n
+
+def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> None:
+    analysis_name = config['output']['analysis_name']
+    if variant_suffix:
+        analysis_name = f"{analysis_name}_{variant_suffix}"
+
+    output_manager = OutputManager(analysis_name, config['output']['base_dir'])
+    run_dir = Path(output_manager.output_dir)
+    logger.info(f"Using run directory: {run_dir}")
+
+    # Prepare monthly data (refactored)
+    try:
+        dfm, predictors, n = prepare_monthly_data(config)
+    except (ValueError, RuntimeError) as e:
+        logger.error(f"Échec de préparation des données: {e}")
+        return
 
     # Regressions
     y = dfm['Albedo'].values.astype(float)
-    n = len(dfm)
     if n < 24:
         logger.warning("Fewer than 24 monthly observations; results may be unstable.")
 
@@ -930,12 +1041,41 @@ def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> No
     # Residual diagnostics plots
     residual_diagnostics_plots(y, y_hat, run_dir)
 
-    # Durbin–Watson statistic
+    # Enhanced residual diagnostics
     dw = durbin_watson(resid)
-    append_report(run_dir,
-                  "Residual autocorrelation (Durbin–Watson)",
+    bp_stat, bp_p = breusch_pagan_test(resid, y_hat)
+    
+    # Auto-activate HAC if autocorrelation detected
+    dw_suspicious = abs(dw - 2.0) > 0.5 if np.isfinite(dw) else False
+    auto_hac_triggered = False
+    
+    if dw_suspicious and not config.get('hac_lag'):
+        # Auto HAC with lag = n^0.25 (rule of thumb)
+        auto_lag = max(1, int(n**0.25))
+        se_hac_auto, p_hac_auto = hac_se(y, X, auto_lag)
+        auto_hac_triggered = True
+        logger.info(f"HAC auto-activé (DW={dw:.3f}) avec lag={auto_lag}")
+    
+    # Enhanced diagnostic report
+    diag_lines = [
+        f"DW = {dw:.3f} (≈2 indique faible autocorrélation)",
+        f"Breusch-Pagan: LM={bp_stat:.3f}, p={bp_p:.3f} (hétéroscédasticité)" if np.isfinite(bp_p) else "Breusch-Pagan: échec du test"
+    ]
+    
+    if dw_suspicious:
+        diag_lines.append(f"⚠️  Autocorrélation détectée (|DW-2|={abs(dw-2.0):.3f} > 0.5)")
+    if bp_p < 0.05 and np.isfinite(bp_p):
+        diag_lines.append("⚠️  Hétéroscédasticité détectée (p<0.05)")
+    
+    append_report(run_dir, "Diagnostics résiduels avancés", 
                   [], np.array([]), np.array([]), np.array([]), np.array([]),
-                  r2, adj_r2, n, None, extra_lines=[f"DW = {dw:.3f} (≈2 indique faible autocorrélation)"])
+                  r2, adj_r2, n, None, extra_lines=diag_lines)
+    
+    # Auto HAC report if triggered
+    if auto_hac_triggered:
+        append_hac_report(run_dir,
+                          "HAC auto-activé (Durbin-Watson suspect): Albedo ~ " + " + ".join(predictors),
+                          ['Intercept'] + predictors, beta, se_hac_auto, p_hac_auto, auto_lag)
 
     # Plots: pairs and partials
     plot_pairs_and_save(dfm[['Albedo'] + predictors], run_dir)
