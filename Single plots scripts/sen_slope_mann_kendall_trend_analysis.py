@@ -599,34 +599,61 @@ class TrendVisualizer:
         return x_line, y_line, ci_lines
 
     def _slope_label(self, slope, y, unit):
-        abs_lab = f"{slope:+.4f} {unit}/yr"
+        abs_lab = f"{slope:+.4f}/yr"
         if np.all(y > 0):
             m = float(np.mean(y))
             if m > 0:
                 rel = 100.0 * slope / m
-                return f"Sen slope: {abs_lab} (≈ {rel:+.2f}%/yr)"
-        return f"Sen slope: {abs_lab}"
+                return f"{abs_lab} ({rel:+.1f}%/yr)"
+        return f"{abs_lab}"
 
-    def _plot_trend(self, ax, data, res, color, label, ylabel, unit, ylim=None):
+    def _plot_trend(self, ax, data, res, color, label, ylabel, unit, ylim=None, show_data_legend=True):
         y = data.iloc[:, 1].values
-        ax.scatter(data['date'], y, color=color, alpha=0.8, s=22, label=label, edgecolor='none', zorder=3)
+        data_label = label if show_data_legend else None
+        ax.scatter(data['date'], y, color=color, alpha=0.8, s=22, label=data_label, edgecolor='none', zorder=3)
         if 'sen_slope' in res:
             slope = res['sen_slope']['slope_per_year']
             ci = res['sen_slope']['confidence_interval']
             x_line, y_line, ci_lines = self._sen_line(data['date'], y, slope, ci)
-            ax.plot(x_line, y_line, color='#333333', linewidth=1.8, label=self._slope_label(slope, y, unit).replace('Sen slope: ', 'Slope: '), zorder=2)
+            trend_label = 'Trend line' if show_data_legend else None
+            ax.plot(x_line, y_line, color='#333333', linewidth=1.8, label=trend_label, zorder=2)
             if ci_lines is not None:
                 ax.fill_between(x_line, ci_lines[0], ci_lines[1], color=color, alpha=0.15, zorder=1)
+        # Create consolidated statistics box
+        stats_text = ""
         if 'mann_kendall' in res:
             mk = res['mann_kendall']
             p, tau = mk['p_value'], mk['tau']
             tag = ' (PW)' if mk.get('prewhitened', False) else ''
-            ax.text(0.02, 0.98, f'τ={tau:.3f}{self._get_sig(p)}  p={p:.3f}{tag}', transform=ax.transAxes,
-                    va='top', ha='left', fontsize=9, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, linewidth=0.5))
+            stats_text += f'τ={tau:.3f}{self._get_sig(p)}  p={p:.3f}{tag}\n'
+        
+        if 'sen_slope' in res:
+            slope = res['sen_slope']['slope_per_year']
+            ci = res['sen_slope']['confidence_interval']
+            # Calculate percentage change for better context
+            if np.all(y > 0):
+                m = float(np.mean(y))
+                if m > 0:
+                    rel = 100.0 * slope / m
+                    stats_text += f'Sen slope: {slope:+.4f}/yr ({rel:+.1f}%/yr)\n'
+                else:
+                    stats_text += f'Sen slope: {slope:+.4f}/yr\n'
+            else:
+                stats_text += f'Sen slope: {slope:+.4f}/yr\n'
+            
+            # Add confidence interval if available
+            if ci and len(ci) == 2 and np.isfinite(ci).all():
+                stats_text += f'95% CI: [{ci[0]:+.4f}, {ci[1]:+.4f}]'
+        
+        if stats_text:
+            ax.text(0.02, 0.98, stats_text.strip(), transform=ax.transAxes,
+                    va='top', ha='left', fontsize=8, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, linewidth=0.5))
         if 'n_obs' in data.columns:
             ax.text(0.98, 0.02, f"N/yr median={int(np.median(data['n_obs']))}", ha='right', va='bottom', transform=ax.transAxes, fontsize=8)
         ax.set_xlabel('Year'); ax.set_ylabel(ylabel)
-        ax.legend(loc='upper left', bbox_to_anchor=(0.01, 0.99), frameon=True, fancybox=True, framealpha=0.85, borderpad=0.3, handlelength=1.2, handletextpad=0.4, fontsize=9, ncol=1)
+        # Only show legend if there are items to display
+        if show_data_legend:
+            ax.legend(loc='lower left', bbox_to_anchor=(0.01, 0.01), frameon=True, fancybox=True, framealpha=0.85, borderpad=0.3, handlelength=1.2, handletextpad=0.4, fontsize=9, ncol=1)
         ax.grid(True, alpha=0.3)
         if ylim: ax.set_ylim(*ylim)
 
@@ -658,7 +685,9 @@ class TrendVisualizer:
         for ax, spec in zip(axes, specs):
             data = time_series[spec['key']]
             res = trend_results[spec['key']]['annual']
-            self._plot_trend(ax, data, res, spec['color'], spec['label'], spec['ylabel'], spec['unit'], spec.get('ylim'))
+            # Hide all legend items to clean up the plot - statistics are now in the info box
+            show_data_legend = False
+            self._plot_trend(ax, data, res, spec['color'], spec['label'], spec['ylabel'], spec['unit'], spec.get('ylim'), show_data_legend)
         for i in range(len(specs), 3):
             axes[i].set_visible(False)
 
@@ -670,15 +699,18 @@ class TrendVisualizer:
         return fig
 
     def _corr_plot(self, ax, x, y, xlabel, ylabel, color, title):
-        ax.scatter(x, y, color=color, alpha=0.8, s=22, label='Data', edgecolor='none', zorder=3)
+        ax.scatter(x, y, color=color, alpha=0.8, s=22, edgecolor='none', zorder=3)
         if len(x) > 2:
             slope, intercept, r, p, _ = stats.linregress(x, y)
             lx = np.array([np.min(x), np.max(x)]); ly = slope * lx + intercept
-            ax.plot(lx, ly, color='#333333', linewidth=1.8, label=f'Fit (R²={r**2:.3f})', zorder=2)
-            ax.text(0.02, 0.98, f'R={r:.3f}{("**" if p < 0.01 else "*" if p < 0.05 else "")}  p={p:.3f}  n={len(x)}', transform=ax.transAxes,
-                    va='top', ha='left', fontsize=9, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, linewidth=0.5))
+            ax.plot(lx, ly, color='#333333', linewidth=1.8, zorder=2)
+            
+            # Consolidated statistics box with correlation and fit information
+            sig_stars = "**" if p < 0.01 else "*" if p < 0.05 else ""
+            stats_text = f'R={r:.3f}{sig_stars}  p={p:.3f}  n={len(x)}\nFit: R²={r**2:.3f}\nSlope={slope:.4f}'
+            ax.text(0.02, 0.98, stats_text, transform=ax.transAxes,
+                    va='top', ha='left', fontsize=8, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, linewidth=0.5))
         ax.set_title(title, fontsize=12, fontweight='bold'); ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
-        ax.legend(loc='upper left', frameon=True, fancybox=True, framealpha=0.9)
         ax.grid(True, alpha=0.3)
         if 'albedo' in ylabel.lower(): ax.set_ylim(0, 1)
 
