@@ -609,40 +609,51 @@ class TrendVisualizer:
 
     def _plot_trend(self, ax, data, res, color, label, ylabel, unit, ylim=None):
         y = data.iloc[:, 1].values
-        ax.scatter(data['date'], y, color=color, alpha=0.7, s=50, label=label)
+        ax.scatter(data['date'], y, color=color, alpha=0.8, s=22, label=label, edgecolor='none', zorder=3)
         if 'sen_slope' in res:
             slope = res['sen_slope']['slope_per_year']
             ci = res['sen_slope']['confidence_interval']
             x_line, y_line, ci_lines = self._sen_line(data['date'], y, slope, ci)
-            ax.plot(x_line, y_line, color='#2C3E50', linewidth=2, label=self._slope_label(slope, y, unit))
+            ax.plot(x_line, y_line, color='#333333', linewidth=1.8, label=self._slope_label(slope, y, unit).replace('Sen slope: ', 'Slope: '), zorder=2)
             if ci_lines is not None:
-                ax.fill_between(x_line, ci_lines[0], ci_lines[1], color='#85C1E9', alpha=0.3, label='95% CI')
+                ax.fill_between(x_line, ci_lines[0], ci_lines[1], color=color, alpha=0.15, zorder=1)
         if 'mann_kendall' in res:
             mk = res['mann_kendall']
             p, tau = mk['p_value'], mk['tau']
             tag = ' (PW)' if mk.get('prewhitened', False) else ''
-            ax.text(0.05, 0.95, f'τ = {tau:.3f}{self._get_sig(p)}\np = {p:.3f}{tag}', transform=ax.transAxes,
-                    va='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
+            ax.text(0.02, 0.98, f'τ={tau:.3f}{self._get_sig(p)}  p={p:.3f}{tag}', transform=ax.transAxes,
+                    va='top', ha='left', fontsize=9, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, linewidth=0.5))
         if 'n_obs' in data.columns:
-            ax.text(0.98, 0.02, f"N/yr median={int(np.median(data['n_obs']))}", ha='right', va='bottom', transform=ax.transAxes, fontsize=9)
-        ax.set_xlabel('Year'); ax.set_ylabel(ylabel); ax.legend(loc='lower right'); ax.grid(True, alpha=0.3)
+            ax.text(0.98, 0.02, f"N/yr median={int(np.median(data['n_obs']))}", ha='right', va='bottom', transform=ax.transAxes, fontsize=8)
+        ax.set_xlabel('Year'); ax.set_ylabel(ylabel)
+        ax.legend(loc='upper left', bbox_to_anchor=(0.01, 0.99), frameon=True, fancybox=True, framealpha=0.85, borderpad=0.3, handlelength=1.2, handletextpad=0.4, fontsize=9, ncol=1)
+        ax.grid(True, alpha=0.3)
         if ylim: ax.set_ylim(*ylim)
 
     def create_trends_plot(self, trend_results: Dict[str, Any], time_series: Dict[str, pd.DataFrame], output_path: Optional[str] = None) -> plt.Figure:
         logger.info("Creating focused trends plot...")
         try: plt.style.use(self.config['visualization']['style'])
         except Exception: plt.style.use('seaborn-v0_8-whitegrid')
-        fig, axes = plt.subplots(1, 3, figsize=(18, 6), dpi=self.config['visualization']['dpi'])
-        fig.suptitle('Mann-Kendall Trend Analysis: Haig Glacier (2002-2024)', fontsize=16, fontweight='bold', y=0.95)
+        plt.rcParams.update({
+            'font.family': 'DejaVu Sans',
+            'axes.titlesize': 12,
+            'axes.labelsize': 11,
+            'legend.fontsize': 10,
+            'xtick.labelsize': 10,
+            'ytick.labelsize': 10
+        })
+        side = 4.5
+        fig, axes = plt.subplots(1, 3, figsize=(side*3, side), dpi=max(300, int(self.config['visualization']['dpi'])))
+        fig.suptitle('Mann–Kendall Trend Analysis: Haig Glacier (2002–2024)', fontsize=13, fontweight='bold', y=0.98)
 
         modis_key = next((k for k in time_series if k.startswith('modis_') and k.endswith('_annual') and k in trend_results), None)
         specs = []
         if modis_key:
-            specs.append(dict(key=modis_key, color='#8E44AD', label='MODIS Albedo', ylabel='Albedo (unitless)', unit='units', ylim=(0, 1)))
+            specs.append(dict(key=modis_key, color='#0072B2', label='MODIS albedo', ylabel='Albedo (unitless)', unit='units', ylim=(0, 1)))
         if 'temperature_annual' in time_series and 'temperature_annual' in trend_results:
-            specs.append(dict(key='temperature_annual', color='#E74C3C', label='Melt Season Temperature', ylabel='Temperature (°C)', unit='°C'))
+            specs.append(dict(key='temperature_annual', color='#D55E00', label='Melt-season temperature', ylabel='Temperature (°C)', unit='°C'))
         if 'bc_aod_annual' in time_series and 'bc_aod_annual' in trend_results:
-            specs.append(dict(key='bc_aod_annual', color='#D35400', label='Melt Season BC AOD', ylabel='BC AOD', unit='units'))
+            specs.append(dict(key='bc_aod_annual', color='#009E73', label='Melt-season BC AOD', ylabel='BC AOD', unit='units'))
 
         for ax, spec in zip(axes, specs):
             data = time_series[spec['key']]
@@ -651,51 +662,60 @@ class TrendVisualizer:
         for i in range(len(specs), 3):
             axes[i].set_visible(False)
 
-        fig.text(0.02, 0.02, 'Significance levels: * p < 0.05, ** p < 0.01', fontsize=10, style='italic')
-        fig.text(0.98, 0.02, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', fontsize=8, ha='right')
-        plt.tight_layout(rect=[0, 0.03, 1, 0.96])
+        fig.text(0.99, 0.02, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', fontsize=8, ha='right')
+        plt.tight_layout(rect=[0, 0.04, 1, 0.96], w_pad=1.2, h_pad=0.6)
         if output_path:
-            fig.savefig(output_path, dpi=self.config['visualization']['dpi'], bbox_inches='tight', facecolor='white', edgecolor='none')
+            fig.savefig(output_path, dpi=max(300, int(self.config['visualization']['dpi'])), bbox_inches='tight', facecolor='white', edgecolor='none')
             logger.info(f"Trends plot saved to: {output_path}")
         return fig
 
     def _corr_plot(self, ax, x, y, xlabel, ylabel, color, title):
-        ax.scatter(x, y, color=color, alpha=0.7, s=50, label='Annual Data Points')
+        ax.scatter(x, y, color=color, alpha=0.8, s=22, label='Data', edgecolor='none', zorder=3)
         if len(x) > 2:
             slope, intercept, r, p, _ = stats.linregress(x, y)
             lx = np.array([np.min(x), np.max(x)]); ly = slope * lx + intercept
-            ax.plot(lx, ly, color='#2C3E50', linewidth=2, label=f'Linear fit: R² = {r**2:.3f}')
-            ax.text(0.05, 0.95, f'R = {r:.3f}{("**" if p < 0.01 else "*" if p < 0.05 else "")}\np = {p:.3f}\nn = {len(x)}', transform=ax.transAxes,
-                    va='top', bbox=dict(boxstyle='round', facecolor='white', alpha=0.8))
-        ax.set_title(title, fontsize=14, fontweight='bold'); ax.set_xlabel(xlabel); ax.set_ylabel(ylabel); ax.legend(loc='lower right'); ax.grid(True, alpha=0.3)
+            ax.plot(lx, ly, color='#333333', linewidth=1.8, label=f'Fit (R²={r**2:.3f})', zorder=2)
+            ax.text(0.02, 0.98, f'R={r:.3f}{("**" if p < 0.01 else "*" if p < 0.05 else "")}  p={p:.3f}  n={len(x)}', transform=ax.transAxes,
+                    va='top', ha='left', fontsize=9, bbox=dict(boxstyle='round', facecolor='white', alpha=0.9, linewidth=0.5))
+        ax.set_title(title, fontsize=12, fontweight='bold'); ax.set_xlabel(xlabel); ax.set_ylabel(ylabel)
+        ax.legend(loc='upper left', frameon=True, fancybox=True, framealpha=0.9)
+        ax.grid(True, alpha=0.3)
         if 'albedo' in ylabel.lower(): ax.set_ylim(0, 1)
 
     def create_correlations_plot(self, time_series: Dict[str, pd.DataFrame], output_path: Optional[str] = None) -> plt.Figure:
         logger.info("Creating focused correlations plot...")
         try: plt.style.use(self.config['visualization']['style'])
         except Exception: plt.style.use('seaborn-v0_8-whitegrid')
-        fig, axes = plt.subplots(1, 3, figsize=(18, 6), dpi=self.config['visualization']['dpi'])
-        fig.suptitle('Climate Variables Correlation Analysis: Haig Glacier (2002-2024)', fontsize=16, fontweight='bold', y=0.95)
+        plt.rcParams.update({
+            'font.family': 'DejaVu Sans',
+            'axes.titlesize': 12,
+            'axes.labelsize': 11,
+            'legend.fontsize': 10,
+            'xtick.labelsize': 10,
+            'ytick.labelsize': 10
+        })
+        side = 4.5
+        fig, axes = plt.subplots(1, 3, figsize=(side*3, side), dpi=max(300, int(self.config['visualization']['dpi'])))
+        fig.suptitle('Climate Variables Correlation Analysis: Haig Glacier (2002–2024)', fontsize=13, fontweight='bold', y=0.98)
 
         modis_key = next((k for k in time_series if k.startswith('modis_') and k.endswith('_annual')), None)
         if modis_key and 'temperature_annual' in time_series:
             merged = pd.merge(time_series[modis_key], time_series['temperature_annual'], on='date')
-            if len(merged): self._corr_plot(axes[0], merged['Temperature'].values, merged['Albedo'].values, 'Temperature (°C)', 'Albedo (unitless)', '#3498DB', 'Temperature vs Albedo')
+            if len(merged): self._corr_plot(axes[0], merged['Temperature'].values, merged['Albedo'].values, 'Temperature (°C)', 'Albedo (unitless)', '#0072B2', 'Temperature vs Albedo')
         else: axes[0].set_visible(False)
         if modis_key and 'bc_aod_annual' in time_series:
             merged = pd.merge(time_series[modis_key], time_series['bc_aod_annual'], on='date')
-            if len(merged): self._corr_plot(axes[1], merged['BC_AOD'].values, merged['Albedo'].values, 'BC AOD', 'Albedo (unitless)', '#E74C3C', 'BC AOD vs Albedo')
+            if len(merged): self._corr_plot(axes[1], merged['BC_AOD'].values, merged['Albedo'].values, 'BC AOD', 'Albedo (unitless)', '#D55E00', 'BC AOD vs Albedo')
         else: axes[1].set_visible(False)
         if 'temperature_annual' in time_series and 'bc_aod_annual' in time_series:
             merged = pd.merge(time_series['temperature_annual'], time_series['bc_aod_annual'], on='date')
-            if len(merged): self._corr_plot(axes[2], merged['Temperature'].values, merged['BC_AOD'].values, 'Temperature (°C)', 'BC AOD', '#27AE60', 'Temperature vs BC AOD')
+            if len(merged): self._corr_plot(axes[2], merged['Temperature'].values, merged['BC_AOD'].values, 'Temperature (°C)', 'BC AOD', '#009E73', 'Temperature vs BC AOD')
         else: axes[2].set_visible(False)
 
-        fig.text(0.02, 0.02, 'Significance levels: * p < 0.05, ** p < 0.01', fontsize=10, style='italic')
-        fig.text(0.98, 0.02, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', fontsize=8, ha='right')
-        plt.tight_layout(rect=[0, 0.03, 1, 0.96])
+        fig.text(0.99, 0.02, f'Generated: {datetime.now().strftime("%Y-%m-%d %H:%M")}', fontsize=8, ha='right')
+        plt.tight_layout(rect=[0, 0.04, 1, 0.96], w_pad=1.2, h_pad=0.6)
         if output_path:
-            fig.savefig(output_path, dpi=self.config['visualization']['dpi'], bbox_inches='tight', facecolor='white', edgecolor='none')
+            fig.savefig(output_path, dpi=max(300, int(self.config['visualization']['dpi'])), bbox_inches='tight', facecolor='white', edgecolor='none')
             logger.info(f"Correlations plot saved to: {output_path}")
         return fig
 
