@@ -142,14 +142,14 @@ logger = logging.getLogger(f"{CURRENT_CONFIG['output_prefix']}_monthly_regressio
 
 CONFIG = {
     'data_paths': {
-        CURRENT_GLACIER: {
+CURRENT_GLACIER = 'coropuna'
             'modis': CURRENT_CONFIG['data_paths']['modis'],
             'aws': CURRENT_CONFIG['data_paths']['aws'],
             'temperature': CURRENT_CONFIG['data_paths']['merra2']
         }
     },
     'aws_stations': {CURRENT_GLACIER: CURRENT_CONFIG['aws_coords']},
-    'methods': ['MOD09GA'],
+    'methods': ['MOD09GA', 'MCD43A3', 'MOD10A1', 'MYD09GA', 'MYD10A1'],
     'method_mapping': {
         'mcd43a3': 'MCD43A3', 'MCD43A3': 'MCD43A3',
         'mod09ga': 'MOD09GA', 'MOD09GA': 'MOD09GA',
@@ -168,25 +168,32 @@ CONFIG = {
     'precip_column': 'total_precip_mm',
     'add_temp_quad': False,         # add Temperature^2 (centered) predictor
     'hac_lag': None,                # Newey-West lag; None disables HAC output
+    'agg_period': 'M',              # Aggregation period: 'M' (monthly), '16D' (16 days)
+    'method': 'MOD09GA',            # Default MODIS method
 
-    # Variants to run
+    # Variants to run - compare MCD43A3, MOD09GA, MOD10A1 for all glaciers
     'variants': [
-        {'suffix': 'jjas_totalprecip', 'precip_column': 'total_precip_mm', 'months_filter': [6,7,8,9], 'add_temp_quad': False, 'hac_lag': None},
-        {'suffix': 'jjas_snowfall',    'precip_column': 'snowfall_mm',    'months_filter': [6,7,8,9], 'add_temp_quad': False, 'hac_lag': None},
-        {'suffix': 'jjas_rainfall',    'precip_column': 'rainfall_mm',    'months_filter': [6,7,8,9], 'add_temp_quad': False, 'hac_lag': None},
-        # Examples with T^2 and/or HAC:
-        {'suffix': 'jjas_rainfall_t2',  'precip_column': 'rainfall_mm',   'months_filter': [6,7,8,9], 'add_temp_quad': True,  'hac_lag': None},
-        {'suffix': 'jjas_rainfall_hac2','precip_column': 'rainfall_mm',   'months_filter': [6,7,8,9], 'add_temp_quad': False, 'hac_lag': 2},
+        {'method': 'MCD43A3'},  # Highest data availability (16,973 obs)
+        {'method': 'MOD09GA'},  # High data availability + good performance (8,697 obs)
+        {'method': 'MOD10A1'},  # Best performance for Haig (5,332 obs)
     ],
 }
 
+# Dynamic file names (will be set in run_once based on config)
 SUMMARY_TXT_NAME = "summary.txt"
-PAIRS_PLOT = f"{CURRENT_CONFIG['output_prefix']}_monthly_pairs.png"
-PARTIAL_TEMP_PLOT = f"{CURRENT_CONFIG['output_prefix']}_monthly_partial_temperature.png"
-PARTIAL_BC_PLOT = f"{CURRENT_CONFIG['output_prefix']}_monthly_partial_bc_aod.png"
-PARTIAL_PRECIP_PLOT = f"{CURRENT_CONFIG['output_prefix']}_monthly_partial_precip.png"
-RESIDUALS_PLOT = f"{CURRENT_CONFIG['output_prefix']}_monthly_residuals_vs_fitted.png"
-QQ_PLOT = f"{CURRENT_CONFIG['output_prefix']}_monthly_residuals_qq_plot.png"
+PAIRS_PLOT = f"{CURRENT_CONFIG['output_prefix']}_pairs.png"
+PARTIAL_TEMP_PLOT = f"{CURRENT_CONFIG['output_prefix']}_partial_temperature.png"
+PARTIAL_BC_PLOT = f"{CURRENT_CONFIG['output_prefix']}_partial_bc_aod.png"
+PARTIAL_PRECIP_PLOT = f"{CURRENT_CONFIG['output_prefix']}_partial_precip.png"
+RESIDUALS_PLOT = f"{CURRENT_CONFIG['output_prefix']}_residuals_vs_fitted.png"
+QQ_PLOT = f"{CURRENT_CONFIG['output_prefix']}_residuals_qq_plot.png"
+
+def get_output_name(base_name: str, config: Dict[str, Any], is_txt: bool = False) -> str:
+    """Generate dynamic output filenames based on method and aggregation period"""
+    method = config.get('method', 'default')
+    period = config.get('agg_period', 'M')
+    ext = '.txt' if is_txt else '.png'
+    return f"{CURRENT_CONFIG['output_prefix']}_{method}_{period}_{base_name}{ext}"
 
 # =============================================================================
 # HELPERS
@@ -208,18 +215,56 @@ def prep_ts(df: pd.DataFrame, value_col: str) -> pd.DataFrame:
     out['month'] = out['date'].dt.month
     return out.sort_values('date').reset_index(drop=True)
 
-def monthly_agg(df: pd.DataFrame, date_col: str, value_col: str, how: str) -> pd.DataFrame:
+def periodic_agg(df: pd.DataFrame, date_col: str, value_col: str, how: str, period: str = 'M') -> pd.DataFrame:
+    """
+    Generalized aggregation function supporting different time periods
+    
+    Args:
+        df: DataFrame with date and value columns
+        date_col: Name of date column
+        value_col: Name of value column to aggregate
+        how: Aggregation method ('mean' or 'sum')
+        period: Time period ('M' for monthly, '16D' for 16 days)
+    
+    Returns:
+        DataFrame with aggregated values
+    """
     d = df[[date_col, value_col]].dropna().copy()
     if d.empty:
         return pd.DataFrame(columns=['date', value_col, 'n_obs'])
-    d['ym'] = pd.to_datetime(d[date_col]).dt.to_period('M')
-    grp = d.groupby('ym')[value_col]
-    agg = grp.mean() if how == 'mean' else grp.sum()
-    out = agg.to_frame(value_col)
-    out['n_obs'] = grp.size()
-    out = out.reset_index()
-    out['date'] = out['ym'].dt.to_timestamp()
-    return out[['date', value_col, 'n_obs']].sort_values('date')
+    
+    # Convert to datetime and set as index
+    d['date_parsed'] = pd.to_datetime(d[date_col])
+    d = d.set_index('date_parsed')
+    
+    if period == 'M':
+        # Monthly aggregation (keep original logic for backward compatibility)
+        d['ym'] = d.index.to_period('M')
+        grp = d.groupby('ym')[value_col]
+        agg = grp.mean() if how == 'mean' else grp.sum()
+        out = agg.to_frame(value_col)
+        out['n_obs'] = grp.size()
+        out = out.reset_index()
+        out['date'] = out['ym'].dt.to_timestamp()
+    elif period == '16D':
+        # 16-day aggregation using resample with consistent origin
+        agg_method = 'mean' if how == 'mean' else 'sum'
+        # Use a consistent origin date to ensure all datasets align
+        origin_date = '2002-01-01'  # Fixed origin for consistent 16-day periods
+        resampled = d.resample('16D', origin=origin_date).agg({value_col: agg_method})
+        resampled['n_obs'] = d.resample('16D', origin=origin_date)[value_col].size()
+        out = resampled.reset_index()
+        out = out.rename(columns={'date_parsed': 'date'})
+        # Remove periods with no observations
+        out = out[out['n_obs'] > 0]
+    else:
+        raise ValueError(f"Unsupported aggregation period: {period}. Use 'M' or '16D'.")
+    
+    return out[['date', value_col, 'n_obs']].sort_values('date').reset_index(drop=True)
+
+# Keep monthly_agg for backward compatibility (wrapper)
+def monthly_agg(df: pd.DataFrame, date_col: str, value_col: str, how: str) -> pd.DataFrame:
+    return periodic_agg(df, date_col, value_col, how, period='M')
 
 def find_latest_run_dir(base_dir: Path, analysis_name: str) -> Path:
     base = Path(base_dir)
@@ -386,18 +431,20 @@ class PixelSelector:
 
     def select_best_pixels(self, modis_data: pd.DataFrame, glacier_id: str) -> pd.DataFrame:
         """
-        Select the best MODIS pixel(s) near the AWS based on glacier fraction and distance.
+        Select all MODIS pixels that meet glacier fraction and observation count criteria.
         If the necessary columns are missing, returns the input unchanged.
         """
         if modis_data.empty:
             return modis_data
-        station = self.config['aws_stations'].get(glacier_id)
-        if station is None:
-            return modis_data
-        if not {'latitude', 'longitude', 'pixel_id'}.issubset(modis_data.columns):
+        # Check if we have the required columns for filtering
+        if not {'pixel_id'}.issubset(modis_data.columns):
             return modis_data
 
-        agg = {'Albedo': 'count', 'latitude': 'first', 'longitude': 'first'}
+        agg = {'Albedo': 'count'}
+        if 'latitude' in modis_data.columns:
+            agg['latitude'] = 'first'
+        if 'longitude' in modis_data.columns:
+            agg['longitude'] = 'first'
         if 'glacier_fraction' in modis_data.columns:
             agg['glacier_fraction'] = 'mean'
 
@@ -412,12 +459,14 @@ class PixelSelector:
         if quality.empty:
             return modis_data
 
-        quality['distance_to_aws'] = self._haversine_distance(
-            quality['latitude'].values, quality['longitude'].values, station['lat'], station['lon']
-        )
-        best = quality.sort_values(['avg_glacier_fraction', 'distance_to_aws'], ascending=[False, True]).head(1)
-        pix_ids = best['pixel_id'].tolist()
-        return modis_data[modis_data['pixel_id'].isin(pix_ids)].copy()
+        # Use ALL qualifying pixels instead of just the closest one
+        pix_ids = quality['pixel_id'].tolist()
+        selected_data = modis_data[modis_data['pixel_id'].isin(pix_ids)].copy()
+        
+        logger.info(f"Selected {len(pix_ids)} pixels meeting quality criteria for {glacier_id} glacier")
+        logger.info(f"Total observations: {len(selected_data)} (from {len(modis_data)} original)")
+        
+        return selected_data
 
 # =============================================================================
 # STATS CORE
@@ -636,7 +685,7 @@ def append_hac_report(run_dir: Path, title: str, names: List[str],
         f.write("\n".join(lines))
     logger.info(f"Appended HAC report to {summary_path}")
 
-def plot_pairs_and_save(df: pd.DataFrame, run_dir: Path):
+def plot_pairs_and_save(df: pd.DataFrame, run_dir: Path, config: Dict[str, Any] = None):
     # Apply professional styling matching trend analysis
     try: plt.style.use('seaborn-v0_8-whitegrid')
     except Exception: plt.style.use('seaborn-v0_8-whitegrid')
@@ -651,9 +700,12 @@ def plot_pairs_and_save(df: pd.DataFrame, run_dir: Path):
     
     fig, axes = plt.subplots(2, 2, figsize=(12, 10), dpi=300)
     
-    # Add main title with glacier name
-    fig.suptitle(f'Monthly Climate Variables Correlation Analysis: {CURRENT_CONFIG["name"]} (2002–2024)', 
-                fontsize=13, fontweight='bold', y=0.98)
+    # Add main title with glacier name, method and period
+    method = config.get('method', 'MOD09GA') if config else 'MOD09GA'
+    period = config.get('agg_period', 'M') if config else 'M'
+    period_label = 'Monthly' if period == 'M' else '16-day'
+    title = f'{period_label} Climate Variables Correlation: {CURRENT_CONFIG["name"]} ({method}, 2002–2024)'
+    fig.suptitle(title, fontsize=13, fontweight='bold', y=0.98)
     
     axes = axes.ravel()
     pairs = [
@@ -844,10 +896,10 @@ def breusch_pagan_test(resid: np.ndarray, y_hat: np.ndarray) -> Tuple[float, flo
 # CORE RUN FUNCTIONS (refactored for maintainability)
 # =============================================================================
 
-def prepare_monthly_data(config: Dict[str, Any]) -> Tuple[pd.DataFrame, List[str], int]:
+def prepare_monthly_data(config: Dict[str, Any]) -> Tuple[pd.DataFrame, List[str], int, Dict[str, float]]:
     """
     Prepare and clean monthly datasets for regression
-    Returns: (monthly_dataframe, predictors, n_observations)
+    Returns: (monthly_dataframe, predictors, n_observations, pixel_stats)
     """
     logger.info(f"Loading datasets for {CURRENT_CONFIG['name']}...")
     
@@ -857,38 +909,63 @@ def prepare_monthly_data(config: Dict[str, Any]) -> Tuple[pd.DataFrame, List[str
     modis, aws, temp, precip = loader.load_glacier_data_complete()
     modis_sel = selector.select_best_pixels(modis, CURRENT_GLACIER)
 
-    # Prepare daily time series
+    # Prepare daily time series with selected method
     ts_modis: Dict[str, pd.DataFrame] = {}
+    selected_method = config.get('method', 'MOD09GA')
+    pixel_stats = {'n_pixels': 0, 'mean_glacier_fraction': 0.0, 'pixels_per_observation': 0.0}
+    
     if not modis_sel.empty:
-        for method in [m for m in modis_sel['method'].unique() if m in config['methods']]:
-            dfm = modis_sel[modis_sel['method'] == method][['date', 'Albedo']].dropna().copy()
-            dfm = prep_ts(dfm, 'Albedo')
-            ts_modis[f'modis_{method.lower()}'] = dfm
+        # Filter for selected method only
+        method_data = modis_sel[modis_sel['method'] == selected_method]
+        if method_data.empty:
+            available_methods = modis_sel['method'].unique().tolist()
+            raise ValueError(f"Selected method '{selected_method}' not found in data. Available methods: {available_methods}")
+        
+        # Calculate pixel statistics
+        unique_pixels = method_data['pixel_id'].nunique()
+        pixel_stats['n_pixels'] = unique_pixels
+        
+        if 'glacier_fraction' in method_data.columns:
+            pixel_stats['mean_glacier_fraction'] = method_data['glacier_fraction'].mean()
+        
+        # Calculate average pixels per time period
+        pixels_per_date = method_data.groupby('date')['pixel_id'].nunique()
+        pixel_stats['pixels_per_observation'] = pixels_per_date.mean()
+        
+        dfm = method_data[['date', 'Albedo']].dropna().copy()
+        dfm = prep_ts(dfm, 'Albedo')
+        ts_modis[f'modis_{selected_method.lower()}'] = dfm
+        logger.info(f"Using MODIS method: {selected_method} ({len(dfm)} daily observations from {unique_pixels} pixels)")
 
     ts_temp = prep_ts(temp, 'Temperature') if not temp.empty else pd.DataFrame()
     ts_bc = prep_ts(temp[['date', 'BC_AOD']].dropna(), 'BC_AOD') if ('BC_AOD' in temp.columns) else pd.DataFrame()
     ts_precip = prep_ts(precip, 'Precipitation') if ('Precipitation' in precip.columns) else pd.DataFrame()
 
-    # Monthly aggregation
+    # Periodic aggregation (monthly or 16-day)
     months_filter = config.get('months_filter', None)
-
-    def monthly_series(df: pd.DataFrame, val: str, how: str) -> pd.DataFrame:
-        if df.empty: return pd.DataFrame(columns=['date', val, 'n_obs'])
-        out = monthly_agg(df, 'date', val, how)
+    agg_period = config.get('agg_period', 'M')
+    
+    def periodic_series(df: pd.DataFrame, val: str, how: str) -> pd.DataFrame:
+        if df.empty: 
+            return pd.DataFrame(columns=['date', val, 'n_obs'])
+        out = periodic_agg(df, 'date', val, how, period=agg_period)
         if months_filter:
             out['month'] = out['date'].dt.month
             out = out[out['month'].isin(months_filter)].drop(columns=['month'])
         return out
+    
+    logger.info(f"Using aggregation period: {agg_period} ({'monthly' if agg_period == 'M' else '16-day'})")
 
-    # Choose one MODIS method
-    modis_key = next((k for k in ts_modis if k.startswith('modis_')), None)
-    if not modis_key:
-        raise RuntimeError("No MODIS daily series found.")
+    # Get the selected MODIS method key
+    modis_key = f'modis_{selected_method.lower()}'
+    if modis_key not in ts_modis:
+        raise RuntimeError(f"No MODIS daily series found for method {selected_method}")
 
-    m_alb = monthly_series(ts_modis[modis_key], 'Albedo', 'mean')
-    m_temp = monthly_series(ts_temp, 'Temperature', 'mean') if not ts_temp.empty else pd.DataFrame()
-    m_bc = monthly_series(ts_bc, 'BC_AOD', 'mean') if not ts_bc.empty else pd.DataFrame()
-    m_prec = monthly_series(ts_precip, 'Precipitation', 'sum') if not ts_precip.empty else pd.DataFrame()
+    # Apply periodic aggregation
+    m_alb = periodic_series(ts_modis[modis_key], 'Albedo', 'mean')
+    m_temp = periodic_series(ts_temp, 'Temperature', 'mean') if not ts_temp.empty else pd.DataFrame()
+    m_bc = periodic_series(ts_bc, 'BC_AOD', 'mean') if not ts_bc.empty else pd.DataFrame()
+    m_prec = periodic_series(ts_precip, 'Precipitation', 'sum') if not ts_precip.empty else pd.DataFrame()
 
     # Check essential datasets before merge
     if m_alb.empty:
@@ -933,7 +1010,7 @@ def prepare_monthly_data(config: Dict[str, Any]) -> Tuple[pd.DataFrame, List[str
     if n < 24:
         logger.warning("Fewer than 24 monthly observations; results may be unstable.")
     
-    return dfm, predictors, n
+    return dfm, predictors, n, pixel_stats
 
 def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> None:
     analysis_name = config['output']['analysis_name']
@@ -944,9 +1021,21 @@ def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> No
     run_dir = Path(output_manager.output_dir)
     logger.info(f"Using run directory: {run_dir}")
 
-    # Prepare monthly data (refactored)
+    # Set dynamic file names based on config
+    global SUMMARY_TXT_NAME, PAIRS_PLOT, PARTIAL_TEMP_PLOT, PARTIAL_BC_PLOT, PARTIAL_PRECIP_PLOT, RESIDUALS_PLOT, QQ_PLOT
+    SUMMARY_TXT_NAME = get_output_name("summary", config, is_txt=True)
+    PAIRS_PLOT = get_output_name("pairs", config)
+    PARTIAL_TEMP_PLOT = get_output_name("partial_temperature", config)
+    PARTIAL_BC_PLOT = get_output_name("partial_bc_aod", config)
+    PARTIAL_PRECIP_PLOT = get_output_name("partial_precip", config)
+    RESIDUALS_PLOT = get_output_name("residuals_vs_fitted", config)
+    QQ_PLOT = get_output_name("residuals_qq_plot", config)
+    
+    logger.info(f"Output files will use method '{config.get('method', 'default')}' and period '{config.get('agg_period', 'M')}'")
+
+    # Prepare periodic data (refactored)
     try:
-        dfm, predictors, n = prepare_monthly_data(config)
+        dfm, predictors, n, pixel_stats = prepare_monthly_data(config)
     except (ValueError, RuntimeError) as e:
         logger.error(f"Échec de préparation des données: {e}")
         return
@@ -1078,7 +1167,7 @@ def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> No
                           ['Intercept'] + predictors, beta, se_hac_auto, p_hac_auto, auto_lag)
 
     # Plots: pairs and partials
-    plot_pairs_and_save(dfm[['Albedo'] + predictors], run_dir)
+    plot_pairs_and_save(dfm[['Albedo'] + predictors], run_dir, config)
     if 'Temperature' in predictors:
         partial_regression_plot_multi(dfm[['Albedo'] + predictors], 'Albedo', 'Temperature',
                                       [c for c in predictors if c not in ['Temperature']], run_dir / PARTIAL_TEMP_PLOT)
@@ -1088,6 +1177,31 @@ def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> No
     if 'Precipitation' in predictors:
         partial_regression_plot_multi(dfm[['Albedo'] + predictors], 'Albedo', 'Precipitation',
                                       [c for c in predictors if c != 'Precipitation'], run_dir / PARTIAL_PRECIP_PLOT)
+
+    # Effect-size sentences in physical units
+    effect_lines = ["Effect sizes (per-unit change in predictor):"]
+    for p_idx, pname in enumerate(predictors, start=1):  # +1 skips intercept
+        b_val = beta[p_idx]
+        se_val = se[p_idx]
+        ci95 = 1.96 * se_val
+        # Optional rescaling for easier interpretation
+        if pname == 'BC_AOD':
+            scale = 0.001  # express per 0.001 AOD
+            b_val_scaled = b_val * scale
+            ci95_scaled = ci95 * scale
+            effect_lines.append(
+                f"  +0.001 BC_AOD → ΔAlbedo = {b_val_scaled:+.3f} ± {ci95_scaled:.3f} (95% CI)")
+        elif pname == 'Precipitation':
+            scale = 10.0  # per 10 mm month⁻¹
+            b_val_scaled = b_val * scale
+            ci95_scaled = ci95 * scale
+            effect_lines.append(
+                f"  +10 mm precip → ΔAlbedo = {b_val_scaled:+.3f} ± {ci95_scaled:.3f} (95% CI)")
+        else:  # Temperature or others in natural units
+            effect_lines.append(
+                f"  +1 {pname} unit → ΔAlbedo = {b_val:+.3f} ± {ci95:.3f} (95% CI)")
+    append_report(run_dir, "Physical effect sizes", [], np.array([]), np.array([]), np.array([]), np.array([]),
+                  r2, adj_r2, n, None, extra_lines=effect_lines)
 
     # LMG and Partial R²
     try:
@@ -1115,6 +1229,17 @@ def run_once(config: Dict[str, Any], variant_suffix: Optional[str] = None) -> No
     except Exception as e:
         logger.warning(f"Partial R² computation failed: {e}")
 
+    # Add pixel statistics to summary report
+    pixel_stats_lines = [
+        "Pixel Statistics:",
+        f"  Number of pixels used: {pixel_stats['n_pixels']}",
+        f"  Mean glacier fraction: {pixel_stats['mean_glacier_fraction']:.3f}",
+        f"  Average pixels per observation: {pixel_stats['pixels_per_observation']:.1f}"
+    ]
+    append_report(run_dir, "Data Summary Statistics",
+                  [], np.array([]), np.array([]), np.array([]), np.array([]),
+                  r2, adj_r2, n, None, extra_lines=pixel_stats_lines)
+
     logger.info(f"Monthly regression for {CURRENT_CONFIG['name']} (paper-aligned) completed successfully.")
 
 # =============================================================================
@@ -1132,6 +1257,8 @@ def main():
             cfg['precip_column'] = v.get('precip_column', CONFIG.get('precip_column', 'total_precip_mm'))
             cfg['add_temp_quad'] = v.get('add_temp_quad', CONFIG.get('add_temp_quad', False))
             cfg['hac_lag'] = v.get('hac_lag', CONFIG.get('hac_lag', None))
+            cfg['agg_period'] = v.get('agg_period', CONFIG.get('agg_period', 'M'))
+            cfg['method'] = v.get('method', CONFIG.get('method', 'MOD09GA'))
             run_once(cfg, variant_suffix=v.get('suffix'))
 
 if __name__ == "__main__":
